@@ -1497,15 +1497,20 @@ static int show_sig_summary(unsigned long sum, gpgme_ctx_t ctx, gpgme_key_t key,
 
   if ((sum & GPGME_SIGSUM_KEY_EXPIRED))
   {
-    time_t at = key->subkeys->expires ? key->subkeys->expires : 0;
-    if (at)
+    const time_t now = mutt_date_epoch();
+    gpgme_subkey_t sub = key->subkeys;
+    for (; sub; sub = sub->next)
     {
-      state_puts(
-          s, _("Warning: The key used to create the signature expired at: "));
-      print_time(at, s);
-      state_puts(s, "\n");
+      if (sub->expires && sub->expires < now)
+      {
+        state_puts(
+            s, _("Warning: The key used to create the signature expired at: "));
+        print_time(sub->expires, s);
+        state_puts(s, "\n");
+        break;
+      }
     }
-    else
+    if (!sub)
     {
       state_puts(s, _("Warning: At least one certification key has expired\n"));
     }
