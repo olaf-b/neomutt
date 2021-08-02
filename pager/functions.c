@@ -1483,15 +1483,7 @@ static int op_shell_escape(struct IndexSharedData *shared,
  */
 static int op_sort(struct IndexSharedData *shared, struct PagerPrivateData *priv, int op)
 {
-  if (!assert_pager_mode(priv->pview->mode == PAGER_MODE_EMAIL))
-    return IR_NOT_IMPL;
-  if (mutt_select_sort(op == OP_SORT_REVERSE))
-  {
-    OptNeedResort = true;
-    priv->rc = OP_DISPLAY_MESSAGE;
-    return IR_DONE;
-  }
-  return IR_SUCCESS;
+  return index_function_dispatcher(priv->pview->win_index, op);
 }
 
 /**
