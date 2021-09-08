@@ -52,12 +52,14 @@
 #include "question/lib.h"
 #include "adata.h"
 #include "commands.h"
+#include "context.h"
 #include "edata.h"
 #include "mdata.h"
 #include "msn.h"
 #include "mutt_globals.h"
 #include "mutt_logging.h"
 #include "mutt_socket.h"
+#include "mutt_thread.h"
 #include "muttlib.h"
 #include "mx.h"
 #include "protos.h"
@@ -1029,6 +1031,11 @@ fail:
   imap_msn_free(&mdata->msn);
   mutt_hash_free(&mdata->uid_hash);
 
+  mutt_hash_free(&m->subj_hash);
+  mutt_hash_free(&m->id_hash);
+  mutt_hash_free(&m->label_hash);
+  mutt_clear_threads(Context->threads);
+
   for (int i = 0; i < m->msg_count; i++)
   {
     if (m->emails[i] && m->emails[i]->edata)
@@ -1036,6 +1043,8 @@ fail:
     email_free(&m->emails[i]);
   }
   m->msg_count = 0;
+  m->size = 0;
+
   mutt_hcache_delete_record(mdata->hcache, "/MODSEQ", 7);
   imap_hcache_clear_uid_seqset(mdata);
   imap_hcache_close(mdata);
