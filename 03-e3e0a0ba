@@ -1,0 +1,89 @@
+From e3e0a0ba0d1fbe242111eae04da6084a821d5aca Mon Sep 17 00:00:00 2001
+From: Richard Russon <rich@flatcap.org>
+Date: Thu, 14 May 2020 14:02:20 -0700
+Subject: Change mailto handling to parse in-reply-to loosely
+
+To fix ticket 241 without loosening in-reply-to email header parsing,
+add a direct call to mutt_parse_references().  Change the second
+parameter, which was not used, to indicate "allow nonbracketed" mode.
+
+Upstream-commit: https://gitlab.com/muttmua/mutt/commit/e3e0a0ba0d1fbe242111eae04da6084a821d5aca
+
+Co-authored-by: Kevin McCarthy <kevin@8t8.us>
+---
+ parse.c  | 8 ++++----
+ protos.h | 1 +
+ url.c    | 7 +++++++
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/parse.c b/parse.c
+index 9512ef94..3e234422 100644
+--- a/parse.c
++++ b/parse.c
+@@ -98,13 +98,13 @@ char *mutt_read_rfc822_line (FILE *f, char *line, size_t *linelen)
+   /* not reached */
+ }
+ 
+-static LIST *mutt_parse_references (char *s, int in_reply_to)
++LIST *mutt_parse_references (char *s, int allow_nb)
+ {
+   LIST *t, *lst = NULL;
+   char *m;
+   const char *sp;
+ 
+-  m = mutt_extract_message_id (s, &sp, 0);
++  m = mutt_extract_message_id (s, &sp, allow_nb);
+   while (m)
+   {
+     t = safe_malloc (sizeof (LIST));
+@@ -112,7 +112,7 @@ static LIST *mutt_parse_references (char *s, int in_reply_to)
+     t->next = lst;
+     lst = t;
+ 
+-    m = mutt_extract_message_id (NULL, &sp, 0);
++    m = mutt_extract_message_id (NULL, &sp, allow_nb);
+   }
+ 
+   return lst;
+@@ -1272,7 +1272,7 @@ int mutt_parse_rfc822_line (ENVELOPE *e, HEADER *hdr, char *line, char *p, short
+       if (!ascii_strcasecmp (line+1, "n-reply-to"))
+       {
+         mutt_free_list (&e->in_reply_to);
+-        e->in_reply_to = mutt_parse_references (p, 1);
++        e->in_reply_to = mutt_parse_references (p, 0);
+         matched = 1;
+       }
+       break;
+diff --git a/protos.h b/protos.h
+index c8080431..66a0c059 100644
+--- a/protos.h
++++ b/protos.h
+@@ -368,6 +368,7 @@ int mutt_parse_unmono (BUFFER *, BUFFER *, union pointer_long_t, BUFFER *);
+ int mutt_parse_push (BUFFER *, BUFFER *, union pointer_long_t, BUFFER *);
+ int mutt_parse_rc_buffer (BUFFER *, BUFFER *, BUFFER *);
+ int mutt_parse_rc_line (const char *, BUFFER *);
++LIST *mutt_parse_references (char *s, int allow_nb);
+ int mutt_parse_rfc822_line (ENVELOPE *e, HEADER *hdr, char *line, char *p,
+                             short user_hdrs, short weed, short do_2047, LIST **lastp);
+ int mutt_parse_score (BUFFER *, BUFFER *, union pointer_long_t, BUFFER *);
+diff --git a/url.c b/url.c
+index 623dd05c..9c8bcb4c 100644
+--- a/url.c
++++ b/url.c
+@@ -333,6 +333,13 @@ int url_parse_mailto (ENVELOPE *e, char **body, const char *src)
+ 	if (body)
+ 	  mutt_str_replace (body, value);
+       }
++      /* This is a hack to allow un-bracketed message-ids in mailto URLs
++       * without doing the same for email header parsing. */
++      else if (!ascii_strcasecmp (tag, "in-reply-to"))
++      {
++        mutt_free_list (&e->in_reply_to);
++        e->in_reply_to = mutt_parse_references (value, 1);
++      }
+       else
+       {
+ 	char *scratch;
+-- 
+2.26.2
+

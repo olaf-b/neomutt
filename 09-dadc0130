@@ -1,0 +1,47 @@
+From dadc0130fc83ae31f9142f238e60c0921bf18da2 Mon Sep 17 00:00:00 2001
+From: Richard Russon <rich@flatcap.org>
+Date: Mon, 18 Jan 2021 13:54:13 -0500
+Subject: Provide %x format for $message_id_format
+
+The expando format %x generates one pseudorandom byte and puts the
+output in a lowercase hex formatted string of length two.
+
+Upstream-commit: https://gitlab.com/muttmua/mutt/commit/dadc0130fc83ae31f9142f238e60c0921bf18da2
+
+Co-authored-by: Remco Rĳnders <remco@webconquest.com>
+---
+ init.h      | 1 +
+ messageid.c | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/init.h b/init.h
+index a9d2cefc..3ec3a911 100644
+--- a/init.h
++++ b/init.h
+@@ -2078,6 +2078,7 @@ struct option_t MuttVars[] = {
+   ** .dt %r .dd 3 bytes of pseudorandom data encoded in Base64
+   ** .dt %R .dd 3 bytes of /dev/urandom data encoded in Base64
+   ** .dt %S .dd current second of the minute (GMT)
++  ** .dt %x .dd 1 byte of pseudorandom data hex encoded (example: '1b')
+   ** .dt %Y .dd current year using 4 digits (GMT)
+   ** .dt %z .dd 4 byte timestamp + 8 bytes of pseudorandom data encoded in Base64
+   */
+diff --git a/messageid.c b/messageid.c
+index 460dbf5e..c401dcc3 100644
+--- a/messageid.c
++++ b/messageid.c
+@@ -72,6 +72,14 @@ static const char *id_format_str (char *dest, size_t destlen, size_t col,
+       break;
+     }
+ 
++    case 'x':
++    {
++      /* hex encoded random byte */
++      mutt_random_bytes ((char *)r_raw, sizeof(r_raw[0]));
++      snprintf (dest, destlen, "%02x", r_raw[0]);
++      break;
++    }
++
+     case 'z':
+     {
+       /* Convert the four least significant bytes of our timestamp and put it in

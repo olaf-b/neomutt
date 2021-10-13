@@ -1,0 +1,248 @@
+From 1f18828754ed781f2562a60414521a5e1e6b93a8 Mon Sep 17 00:00:00 2001
+From: Richard Russon <rich@flatcap.org>
+Date: Fri, 15 Jan 2021 15:56:45 -0800
+Subject: Add $message_id_format for customizing generated Message-IDs
+
+Provide expandos for the new (2.0+) format and the old format.  Add %r
+and %R to generate fixed size 4-char Base64 blocks from the
+pseudo-random generator, or from /dev/urandom.
+
+The format string allows external filters, for complete control.
+
+Upstream-commit: https://gitlab.com/muttmua/mutt/commit/1f18828754ed781f2562a60414521a5e1e6b93a8
+
+Co-authored-by: Kevin McCarthy <kevin@8t8.us>
+---
+ globals.h   |   1 +
+ init.h      |  35 ++++++++++++
+ messageid.c | 153 +++++++++++++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 171 insertions(+), 18 deletions(-)
+
+diff --git a/globals.h b/globals.h
+index d02a0f83..859732e6 100644
+--- a/globals.h
++++ b/globals.h
+@@ -92,6 +92,7 @@ WHERE long  HeaderCachePageSize;
+ #endif /* HAVE_GDBM || HAVE_DB4 */
+ #endif /* USE_HCACHE */
+ WHERE char *MarkMacroPrefix;
++WHERE char *MessageIdFormat;
+ WHERE char *MhFlagged;
+ WHERE char *MhReplied;
+ WHERE char *MhUnseen;
+diff --git a/init.h b/init.h
+index 4d1eeb6b..736e354c 100644
+--- a/init.h
++++ b/init.h
+@@ -2046,6 +2046,41 @@ struct option_t MuttVars[] = {
+   { "msg_format",	DT_SYN,  R_NONE, {.p="message_format"}, {.p=0} },
+   /*
+   */
++  { "message_id_format", DT_STR, R_NONE, {.p=&MessageIdFormat}, {.p="<%z@%f>"} },
++  /*
++  ** .pp
++  ** This variable describes the format of the Message-ID generated
++  ** when sending messages.  Mutt 2.0 introduced a more compact
++  ** format, but this variable allows the ability to choose your own
++  ** format.  The value may end in ``|'' to invoke an external filter.
++  ** See $formatstrings-filters.
++  ** .pp
++  ** Please note that the Message-ID value follows a strict syntax,
++  ** and you are responsible for ensuring correctness if you change
++  ** this from the default.  In particular, the value must follow the
++  ** syntax in RFC 5322: ``\fC"<" id-left "@" id-right ">"\fP''.  No
++  ** spaces are allowed, and \fCid-left\fP should follow the
++  ** dot-atom-text syntax in the RFC.  The \fCid-right\fP should
++  ** generally be left at %f.
++  ** .pp
++  ** The old Message-ID format can be used by setting this to:
++  ** ``\fC<%y%02m%02d%02H%02M%02S.G%c%p@%f>\fP''
++  ** .pp
++  ** The following \fCprintf(3)\fP-style sequences are understood:
++  ** .dl
++  ** .dt %c .dd step counter looping from ``A'' to ``Z''
++  ** .dt %d .dd current day of the month (GMT)
++  ** .dt %f .dd $$hostname
++  ** .dt %H .dd current hour using a 24-hour clock (GMT)
++  ** .dt %m .dd current month number (GMT)
++  ** .dt %M .dd current minute of the hour (GMT)
++  ** .dt %p .dd pid of the running mutt process
++  ** .dt %r .dd 3 bytes of pseudorandom data encoded in Base64
++  ** .dt %R .dd 3 bytes of /dev/urandom data encoded in Base64
++  ** .dt %S .dd current second of the minute (GMT)
++  ** .dt %y .dd current year using 4 digits (GMT)
++  ** .dt %z .dd 4 byte timestamp + 8 bytes of pseudorandom data encoded in Base64
++  */
+   { "meta_key",		DT_BOOL, R_NONE, {.l=OPTMETAKEY}, {.l=0} },
+   /*
+   ** .pp
+diff --git a/messageid.c b/messageid.c
+index 5a86fa33..3a2bab16 100644
+--- a/messageid.c
++++ b/messageid.c
+@@ -23,30 +23,147 @@
+ #include "mutt.h"
+ #include "mutt_random.h"
+ 
+-char *mutt_gen_msgid (void)
++static char MsgIdPfx = 'A';
++
++typedef struct msg_id_data
+ {
+-  char buf[SHORT_STRING];
+-  time_t now = time (NULL);
+-  char random_bytes[8];
+-  char localpart[12]; /* = 32 bit timestamp, plus 64 bit randomness */
+-  unsigned char localpart_B64[16+1]; /* = Base64 encoded value of localpart plus
+-                                        terminating \0 */
++  time_t now;
++  struct tm tm;
+   const char *fqdn;
++} MSG_ID_DATA;
++
++static const char *id_format_str (char *dest, size_t destlen, size_t col,
++                                  int cols, char op, const char *src,
++                                  const char *fmt, const char *ifstring,
++                                  const char *elsestring,
++                                  void *data, format_flag flags)
++{
++  MSG_ID_DATA *id_data = (MSG_ID_DATA *)data;
++  char tmp[STRING];
++  unsigned char r_raw[3];
++  unsigned char r_out[4 + 1];
++  unsigned char z_raw[12]; /* 32 bit timestamp, plus 64 bit randomness */
++  unsigned char z_out[16 + 1];
++  FILE *random_dev;
++
++  switch (op)
++  {
++    case 'R':
++    {
++      random_dev = fopen ("/dev/urandom", "r");
++      if (random_dev)
++      {
++        if (fread (r_raw, 1, sizeof(r_raw), random_dev) > 0)
++        {
++          mutt_to_base64 (r_out, r_raw, sizeof(r_raw), sizeof(r_out));
++          mutt_format_s (dest, destlen, fmt, (const char *)r_out);
++          safe_fclose (&random_dev);
++          break;
++        }
++        safe_fclose (&random_dev);
++      }
++    }
++    /* fall through */
++    case 'r':
++    {
++      mutt_random_bytes ((char *)r_raw, sizeof(r_raw));
++      mutt_to_base64 (r_out, r_raw, sizeof(r_raw), sizeof(r_out));
++      mutt_format_s (dest, destlen, fmt, (const char *)r_out);
++      break;
++    }
++
++    case 'z':
++    {
++      /* Convert the four least significant bytes of our timestamp and put it in
++         localpart, with proper endianness (for humans) taken into account. */
++      for (int i = 0; i < 4; i++)
++        z_raw[i] = (uint8_t) (id_data->now >> (3-i)*8u);
++      mutt_random_bytes ((char *)z_raw + 4, sizeof(z_raw) - 4);
++      mutt_to_base64 (z_out, z_raw, sizeof(z_raw), sizeof(z_out));
++      mutt_format_s (dest, destlen, fmt, (const char *)z_out);
++      break;
++    }
++
++    case 'y':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_year + 1900);
++      break;
++    case 'm':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_mon + 1);
++      break;
++    case 'd':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_mday);
++      break;
++    case 'H':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_hour);
++      break;
++    case 'M':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_min);
++      break;
++    case 'S':
++      snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
++      snprintf (dest, destlen, tmp, id_data->tm.tm_sec);
++      break;
+ 
+-  mutt_random_bytes (random_bytes, sizeof(random_bytes));
++    case 'c':
++      snprintf (dest, destlen, "%c", MsgIdPfx);
++      MsgIdPfx = (MsgIdPfx == 'Z') ? 'A' : MsgIdPfx + 1;
++      break;
++
++    case 'p':
++      snprintf (tmp, sizeof (tmp), "%%%su", fmt);
++      snprintf (dest, destlen, tmp, (unsigned int)getpid ());
++      break;
++
++    case 'f':
++      mutt_format_s (dest, destlen, fmt, id_data->fqdn);
++      break;
++  }
++
++  return (src);
++}
++
++char *mutt_gen_msgid (void)
++{
++  MSG_ID_DATA id_data;
++  BUFFER *buf, *tmp;
++  const char *fmt;
++  char *rv;
+ 
+-  /* Convert the four least significant bytes of our timestamp and put it in
+-     localpart, with proper endianness (for humans) taken into account. */
+-  for (int i = 0; i < 4; i++)
+-    localpart[i] = (uint8_t) (now >> (3-i)*8u);
++  id_data.now = time (NULL);
++  memcpy (&id_data.tm, gmtime (&id_data.now), sizeof(id_data.tm));
++  if (!(id_data.fqdn = mutt_fqdn(0)))
++    id_data.fqdn = NONULL(Hostname);
+ 
+-  memcpy (&localpart[4], &random_bytes, 8);
++  fmt = MessageIdFormat;
++  if (!fmt)
++    fmt = "<%z@%f>";
+ 
+-  mutt_to_base64 (localpart_B64, (unsigned char *) localpart, 12, 17);
++  buf = mutt_buffer_pool_get ();
++  mutt_FormatString (buf->data, buf->dsize, 0, buf->dsize,
++                     fmt, id_format_str, &id_data, 0);
++  mutt_buffer_fix_dptr (buf);
+ 
+-  if (!(fqdn = mutt_fqdn (0)))
+-    fqdn = NONULL (Hostname);
++  /* this is hardly a thorough check, but at least make sure
++   * we have the angle brackets. */
++  if (!mutt_buffer_len (buf) ||
++      (*buf->data != '<') || (*(buf->dptr - 1) != '>'))
++  {
++    tmp = mutt_buffer_pool_get ();
++    if (!mutt_buffer_len (buf) || *buf->data != '<')
++      mutt_buffer_addch (tmp, '<');
++    mutt_buffer_addstr (tmp, mutt_b2s (buf));
++    if (!mutt_buffer_len (buf) || *(buf->dptr - 1) != '>')
++      mutt_buffer_addch (tmp, '>');
++    mutt_buffer_strcpy (buf, mutt_b2s (tmp));
++    mutt_buffer_pool_release (&tmp);
++  }
+ 
+-  snprintf (buf, sizeof (buf), "<%s@%s>", localpart_B64, fqdn);
+-  return (safe_strdup (buf));
++  rv = safe_strdup (mutt_b2s (buf));
++  mutt_buffer_pool_release (&buf);
++  return rv;
+ }

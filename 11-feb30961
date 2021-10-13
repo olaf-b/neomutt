@@ -1,0 +1,59 @@
+From feb3096152d0e5245577aafe33d94e5eb4495518 Mon Sep 17 00:00:00 2001
+From: Richard Russon <rich@flatcap.org>
+Date: Mon, 18 Jan 2021 14:47:32 -0800
+Subject: Fix warning; minor code cleanup
+
+random_dev isn't used anymore (after removing the %R expando).
+
+I originally had local variables in some of the case statements, and
+forgot to pull out the curly brackets when I moved those to the top of
+the function.
+
+Upstream-commit: https://gitlab.com/muttmua/mutt/commit/feb3096152d0e5245577aafe33d94e5eb4495518
+
+Co-authored-by: Kevin McCarthy <kevin@8t8.us>
+---
+ messageid.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/messageid.c b/messageid.c
+index 7848bec6..e4ac4410 100644
+--- a/messageid.c
++++ b/messageid.c
+@@ -44,28 +44,22 @@ static const char *id_format_str (char *dest, size_t destlen, size_t col,
+   unsigned char r_out[4 + 1];
+   unsigned char z_raw[12]; /* 32 bit timestamp, plus 64 bit randomness */
+   unsigned char z_out[16 + 1];
+-  FILE *random_dev;
+ 
+   switch (op)
+   {
+     case 'r':
+-    {
+       mutt_random_bytes ((char *)r_raw, sizeof(r_raw));
+       mutt_to_base64 (r_out, r_raw, sizeof(r_raw), sizeof(r_out));
+       mutt_format_s (dest, destlen, fmt, (const char *)r_out);
+       break;
+-    }
+ 
+     case 'x':
+-    {
+       /* hex encoded random byte */
+       mutt_random_bytes ((char *)r_raw, sizeof(r_raw[0]));
+       snprintf (dest, destlen, "%02x", r_raw[0]);
+       break;
+-    }
+ 
+     case 'z':
+-    {
+       /* Convert the four least significant bytes of our timestamp and put it in
+          localpart, with proper endianness (for humans) taken into account. */
+       for (int i = 0; i < 4; i++)
+@@ -74,7 +68,6 @@ static const char *id_format_str (char *dest, size_t destlen, size_t col,
+       mutt_to_base64 (z_out, z_raw, sizeof(z_raw), sizeof(z_out));
+       mutt_format_s (dest, destlen, fmt, (const char *)z_out);
+       break;
+-    }
+ 
+     case 'Y':
+       snprintf (tmp, sizeof (tmp), "%%%sd", fmt);

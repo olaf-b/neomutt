@@ -1,0 +1,55 @@
+From 5f5d33f832c82f14280e2c643b2039d4beb68573 Mon Sep 17 00:00:00 2001
+From: Richard Russon <rich@flatcap.org>
+Date: Sun, 17 Jan 2021 19:39:01 -0800
+Subject: Change $message_id_format year expando from %y to %Y
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+So that it matches the strftime() 4-digit year.
+
+Thanks to Vincent Lefèvre for noting the discrepancy.
+
+Upstream-commit: https://gitlab.com/muttmua/mutt/commit/5f5d33f832c82f14280e2c643b2039d4beb68573
+
+Co-authored-by: Kevin McCarthy <kevin@8t8.us>
+---
+ init.h      | 4 ++--
+ messageid.c | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/init.h b/init.h
+index 736e354c..a9d2cefc 100644
+--- a/init.h
++++ b/init.h
+@@ -2064,7 +2064,7 @@ struct option_t MuttVars[] = {
+   ** generally be left at %f.
+   ** .pp
+   ** The old Message-ID format can be used by setting this to:
+-  ** ``\fC<%y%02m%02d%02H%02M%02S.G%c%p@%f>\fP''
++  ** ``\fC<%Y%02m%02d%02H%02M%02S.G%c%p@%f>\fP''
+   ** .pp
+   ** The following \fCprintf(3)\fP-style sequences are understood:
+   ** .dl
+@@ -2078,7 +2078,7 @@ struct option_t MuttVars[] = {
+   ** .dt %r .dd 3 bytes of pseudorandom data encoded in Base64
+   ** .dt %R .dd 3 bytes of /dev/urandom data encoded in Base64
+   ** .dt %S .dd current second of the minute (GMT)
+-  ** .dt %y .dd current year using 4 digits (GMT)
++  ** .dt %Y .dd current year using 4 digits (GMT)
+   ** .dt %z .dd 4 byte timestamp + 8 bytes of pseudorandom data encoded in Base64
+   */
+   { "meta_key",		DT_BOOL, R_NONE, {.l=OPTMETAKEY}, {.l=0} },
+diff --git a/messageid.c b/messageid.c
+index 3a2bab16..460dbf5e 100644
+--- a/messageid.c
++++ b/messageid.c
+@@ -84,7 +84,7 @@ static const char *id_format_str (char *dest, size_t destlen, size_t col,
+       break;
+     }
+ 
+-    case 'y':
++    case 'Y':
+       snprintf (tmp, sizeof (tmp), "%%%sd", fmt);
+       snprintf (dest, destlen, tmp, id_data->tm.tm_year + 1900);
+       break;
