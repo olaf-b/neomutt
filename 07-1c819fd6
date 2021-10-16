@@ -1,0 +1,51 @@
+From 1c819fd62704f9a452678243c7786c1c89ed609b Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Wed, 8 Sep 2021 04:15:11 -0700
+Subject: [PATCH] QRESYNC: don't increment msn for missing headers.
+
+Commit 74ce032f moved the msn increment outside the check for a
+missing header.  The idea was that a header-cache hole needed to be
+accounted for.  However, a header can also be missing just by a VANISH
+happening the last time the mailbox was open.
+
+Since the header won't be in the uid_hash, cmd_parse_vanished() can't
+decrement subsequent msns, so it need to be done in this loop.
+
+If there is a header cache hole, or another problem, verify_qresync()
+will detect a problem and try again without QRESYNC.
+
+However if there were an actual stored "blank", do increment, since
+there was no UID to process a vanish on.
+---
+ imap/message.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/imap/message.c b/imap/message.c
+index 00f20b0c..e79d52df 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -619,9 +619,22 @@ static int read_headers_qresync_eval_cache (IMAP_DATA *idata, char *uid_seqset)
+ 
+       ctx->size += h->content->length;
+       ctx->hdrs[ctx->msgcount++] = h;
+-    }
+ 
+-    msn++;
++      msn++;
++    }
++    /* A non-zero uid missing from the header cache is either the
++     * result of an expunged message (not recorded in the uid seqset)
++     * or a hole in the header cache.
++     *
++     * We have to assume it's an earlier expunge and compact the msn's
++     * in that case, because cmd_parse_vanished() won't find it in the
++     * uid_hash and decrement later msn's there.
++     *
++     * Thus we only increment the uid if the uid was 0: an actual
++     * stored "blank" in the uid seqset.
++     */
++    else if (!uid)
++      msn++;
+   }
+ 
+   mutt_seqset_iterator_free (&iter);

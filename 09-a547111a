@@ -1,0 +1,38 @@
+From a547111ac4d73029cf1e23e429f3a0cff1ec0d50 Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Wed, 8 Sep 2021 09:29:09 -0700
+Subject: [PATCH] Reduce sorting when expunging QRESYNC VANISHED records.
+
+There is no need to perform expensive sorting (e.g. by thread), which
+will just need to be done again after the mailbox is opened.
+---
+ imap/message.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/imap/message.c b/imap/message.c
+index e2f1ada8..2a907021 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -32,6 +32,8 @@
+ #include "mutt.h"
+ #include "imap_private.h"
+ #include "mx.h"
++#include "globals.h"
++#include "sort.h"
+ 
+ #ifdef HAVE_PGP
+ #include "pgp.h"
+@@ -722,8 +724,13 @@ static int read_headers_condstore_qresync_updates (IMAP_DATA *idata,
+   /* VANISHED handling: we need to empty out the messages */
+   if (idata->reopen & IMAP_EXPUNGE_PENDING)
+   {
++    short old_sort;
+     imap_hcache_close (idata);
++
++    old_sort = Sort;
++    Sort = SORT_ORDER;
+     imap_expunge_mailbox (idata);
++    Sort = old_sort;
+ 
+     idata->hcache = imap_hcache_open (idata, NULL);
+     idata->reopen &= ~IMAP_EXPUNGE_PENDING;

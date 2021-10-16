@@ -1,0 +1,9 @@
+d e18d3986 2019-12-01 Mention $imap_qresync and $imap_deflate in performance tuning
+d 67948d74 2020-05-01 Fix CONDSTORE/QRESYNC context flag counts on updates
+b5ef1155 2020-12-07 Abort IMAP open if condstore/qresync updates fetch fails
+1598baa2 2020-12-18 Add a sanity check for qresync
+p 44f2619c 2021-08-21 Reset msn_begin on a QRESYNC failure retry
+p 74ce032f 2021-08-22 Preserve QRESYNC seqset holes when restoring from header cache
+p 1c819fd6 2021-09-08 QRESYNC: don't increment msn for missing headers
+p 57c1017d 2021-09-08 Clean up more context fields on a QRESYNC reset
+a547111a 2021-09-08 Reduce sorting when expunging QRESYNC VANISHED records

@@ -1,0 +1,25 @@
+From b5ef1155371784f2410576049b54eec42252bfaf Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Mon, 7 Dec 2020 13:03:41 -0800
+Subject: [PATCH] Abort IMAP open if condstore/qresync updates fetch fails.
+
+An error in imap_cmd_step() was not being properly returned to the
+caller.
+---
+ imap/message.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imap/message.c b/imap/message.c
+index ed073e96..094440bc 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -671,6 +671,9 @@ static int read_headers_condstore_qresync_updates (IMAP_DATA *idata,
+     imap_hcache_put (idata, idata->msn_index[header_msn - 1]);
+   }
+ 
++  if (rc != IMAP_CMD_OK)
++    return -1;
++
+   /* The IMAP flag setting as part of cmd_parse_fetch() ends up
+    * flipping these on. */
+   idata->check_status &= ~IMAP_FLAGS_PENDING;

@@ -1,0 +1,31 @@
+From 74ce032fbee00f912bd49376b88eab8b04f8bc6e Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Sat, 21 Aug 2021 18:42:33 -0700
+Subject: [PATCH] Preserve QRESYNC seqset holes when restoring from header
+ cache.
+
+It's possible for there to be holes in the MSN sequence, and also in
+the header cache.  When iterating through the seqset, preserve those
+by incrementing msn even if the result isn't found in the header
+cache (because it is 0 or because the record is missing in the header
+cache).
+---
+ imap/message.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imap/message.c b/imap/message.c
+index d6c3bda0..00f20b0c 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -619,9 +619,9 @@ static int read_headers_qresync_eval_cache (IMAP_DATA *idata, char *uid_seqset)
+ 
+       ctx->size += h->content->length;
+       ctx->hdrs[ctx->msgcount++] = h;
+-
+-      msn++;
+     }
++
++    msn++;
+   }
+ 
+   mutt_seqset_iterator_free (&iter);

@@ -1,0 +1,43 @@
+From e18d398603d477b1b54f505e0943c33cd5727a98 Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Sun, 1 Dec 2019 15:25:54 -0800
+Subject: [PATCH] Mention $imap_qresync and $imap_deflate in performance
+ tuning.
+
+Leave some breadcrumbs for the brave. :-)
+---
+ doc/manual.xml.head | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/doc/manual.xml.head b/doc/manual.xml.head
+index 1846b84e..42f08de2 100644
+--- a/doc/manual.xml.head
++++ b/doc/manual.xml.head
+@@ -10219,11 +10219,22 @@ will be gone for the next session.)
+ </para>
+ 
+ <para>
+-To improve performance and permanently cache whole messages, please
+-refer to Mutt's so-called <link linkend="body-caching">body
++To improve performance and permanently cache whole messages and
++headers, please refer to <link linkend="body-caching">body
++caching</link> and <link linkend="header-caching">header
+ caching</link> for details.
+ </para>
+ 
++<para>
++Additionally, it may be worth trying some of Mutt's experimental
++features.  <link linkend="imap-qresync">$imap_qresync</link> (which
++requires header caching) can provide a huge speed boost opening
++mailboxes if your IMAP server supports it.  <link
++linkend="imap-deflate">$imap_deflate</link> enables compression, which
++can also noticeably reduce download time for large mailboxes and
++messages.
++</para>
++
+ </sect1>
+ 
+ <sect1 id="tuning-search">
+-- 
+2.26.2
+

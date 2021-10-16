@@ -1,0 +1,31 @@
+From 44f2619c0932cc78575e70f99f1ba546e065e65e Mon Sep 17 00:00:00 2001
+From: Pieter-Tjerk de Boer <p.t.deboer@utwente.nl>
+Date: Sat, 21 Aug 2021 12:21:25 -0700
+Subject: [PATCH] Reset msn_begin on a QRESYNC failure retry.
+
+Since the msn_index will be regenerated differently, Mutt needs to
+scan for holes again.
+---
+ imap/message.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imap/message.c b/imap/message.c
+index 4c859921..d6c3bda0 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -240,6 +240,7 @@ int imap_read_headers (IMAP_DATA* idata, unsigned int msn_begin, unsigned int ms
+   void *pmodseq = NULL;
+   unsigned long long hc_modseq = 0;
+   char *uid_seqset = NULL;
++  unsigned int msn_begin_original = msn_begin;
+ #endif /* USE_HCACHE */
+ 
+   ctx = idata->ctx;
+@@ -357,6 +358,7 @@ retry:
+       FREE (&uid_seqset);
+       uid_validity = 0;
+       uidnext = 0;
++      msn_begin = msn_begin_original;
+ 
+       goto retry;
+     }

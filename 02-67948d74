@@ -1,0 +1,61 @@
+From 67948d74b51fa4fb4f34c37d646531c031785792 Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Fri, 1 May 2020 03:55:39 -0700
+Subject: [PATCH] Fix CONDSTORE/QRESYNC context flag counts on updates.
+
+read_headers_condstore_qresync_updates() differs from
+read_headers_normal_eval_cache() in that the FLAGS updates are issued
+for existing messages in the context.
+
+So cmd_parse_fetch() will process the flags *but* it will also
+increment/decrement context flag counters.
+
+Zero out the flags (as was being done for VANISHED handling), and let
+mx_update_context() set them properly afterwards.
+
+Thanks to Guilhem Moulin for reporting the issue and helping me test
+this fix.
+---
+ imap/message.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/imap/message.c b/imap/message.c
+index 56b44f05..ed073e96 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -682,21 +682,21 @@ static int read_headers_condstore_qresync_updates (IMAP_DATA *idata,
+     imap_hcache_close (idata);
+     imap_expunge_mailbox (idata);
+ 
+-    /* undo expunge count updates.
+-     * mx_update_context() will do this at the end of the header fetch. */
+-    ctx->vcount = 0;
+-    ctx->vsize = 0;
+-    ctx->tagged = 0;
+-    ctx->deleted = 0;
+-    ctx->new = 0;
+-    ctx->unread = 0;
+-    ctx->changed = 0;
+-    ctx->flagged = 0;
+-
+     idata->hcache = imap_hcache_open (idata, NULL);
+     idata->reopen &= ~IMAP_EXPUNGE_PENDING;
+   }
+ 
++  /* undo expunge count updates and flag updates.
++   * mx_update_context() will do this at the end of the header fetch. */
++  ctx->vcount = 0;
++  ctx->vsize = 0;
++  ctx->tagged = 0;
++  ctx->deleted = 0;
++  ctx->new = 0;
++  ctx->unread = 0;
++  ctx->changed = 0;
++  ctx->flagged = 0;
++
+   return 0;
+ }
+ #endif  /* USE_HCACHE */
+-- 
+2.26.2
+

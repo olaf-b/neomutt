@@ -1,0 +1,39 @@
+From 57c1017d97ae26bac31be3a0b3cbfd4c1c2ddd60 Mon Sep 17 00:00:00 2001
+From: Kevin McCarthy <kevin@8t8.us>
+Date: Wed, 8 Sep 2021 07:37:37 -0700
+Subject: [PATCH] Clean up more context fields on a QRESYNC reset.
+
+Reset ctx->size.
+
+Clear all hash structures.  Currently imap_expunge_mailbox() triggers
+a resort, which can populate some of these hashes.  The next commit
+will change that, but it's better to make sure there are no remnants
+in any hashes to avoid memory corruption.
+---
+ imap/message.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/imap/message.c b/imap/message.c
+index e79d52df..e2f1ada8 100644
+--- a/imap/message.c
++++ b/imap/message.c
+@@ -782,6 +782,11 @@ fail:
+ 
+   hash_destroy (&idata->uid_hash, NULL);
+ 
++  hash_destroy (&ctx->subj_hash, NULL);
++  hash_destroy (&ctx->id_hash, NULL);
++  hash_destroy (&ctx->label_hash, NULL);
++  mutt_clear_threads (ctx);
++
+   for (i = 0; i < ctx->msgcount; i++)
+   {
+     if (ctx->hdrs[i] && ctx->hdrs[i]->data)
+@@ -789,6 +794,7 @@ fail:
+     mutt_free_header (&ctx->hdrs[i]);
+   }
+   ctx->msgcount = 0;
++  ctx->size = 0;
+ 
+   mutt_hcache_delete (idata->hcache, "/MODSEQ", imap_hcache_keylen);
+   imap_hcache_clear_uid_seqset (idata);
