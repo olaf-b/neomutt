@@ -1502,7 +1502,20 @@ bool maildir_msg_open_new(struct Mailbox *m, struct Message *msg, const struct E
     struct Email tmp = *e;
     tmp.deleted = false;
     tmp.edata = NULL;
+
+    if (msg->flags.draft)
+    {
+      struct MaildirEmailData *new_edata = maildir_edata_new();
+      new_edata->maildir_flags = mutt_str_dup("D");
+      tmp.edata = new_edata;
+    }
+
     maildir_gen_flags(suffix, sizeof(suffix), &tmp);
+
+    if (tmp.edata)
+    {
+      maildir_edata_free(&tmp.edata);
+    }
   }
   else
     *suffix = '\0';
