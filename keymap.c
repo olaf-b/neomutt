@@ -53,6 +53,9 @@
 #ifdef USE_INOTIFY
 #include "monitor.h"
 #endif
+#ifdef USE_IPC
+#include "ipc.h"
+#endif
 
 /**
  * KeyNames - Key name lookup table
@@ -665,6 +668,11 @@ int km_dokey(enum MenuType mtype)
           if (MonitorFilesChanged)
             goto gotkey;
 #endif
+#ifdef USE_IPC
+          if (Socket.msg.ready) {
+            goto gotkey;
+          }
+#endif
           i -= c_imap_keepalive;
           imap_keepalive();
         }
@@ -679,6 +687,27 @@ int km_dokey(enum MenuType mtype)
 #ifdef USE_IMAP
   gotkey:
 #endif
+
+#ifdef USE_IPC
+    if (Socket.msg.ready)
+    {
+      switch(Socket.msg.type)
+      {
+        case IPC_COMMAND:
+          return OP_IPC_COMMAND;
+          break;
+        case IPC_MAILBOX:
+          return OP_IPC_MAILBOX;
+          break;
+        case IPC_CONFIG:
+          return OP_IPC_CONFIG;
+          break;
+        default:
+          break;
+      }
+    }
+#endif
+
     /* hide timeouts, but not window resizes, from the line editor. */
     if ((mtype == MENU_EDITOR) && (tmp.ch == -2) && !SigWinch)
       continue;

@@ -71,6 +71,9 @@
 #ifdef ENABLE_NLS
 #include <libintl.h>
 #endif
+#ifdef USE_IPC
+#include "ipc.h"
+#endif
 
 /** The folder the user last saved to.  Used by ci_save_message() */
 static struct Buffer LastSaveFolder = { 0 };
@@ -636,6 +639,13 @@ void mutt_enter_command(void)
 {
   char buf[1024] = { 0 };
 
+#ifdef USE_IPC
+  if (Socket.msg.ready){
+    strcpy(buf, Socket.msg.data);
+    if (buf[0] == '\0') goto close_conn;
+    goto buf_ready;
+  }
+#endif
   window_redraw(NULL);
   /* if enter is pressed after : with no command, just return */
   if ((mutt_get_field(":", buf, sizeof(buf), MUTT_COMMAND, false, NULL, NULL) != 0) ||
@@ -644,6 +654,7 @@ void mutt_enter_command(void)
     return;
   }
 
+buf_ready:
   struct Buffer err = mutt_buffer_make(256);
 
   /* check if buf is a valid icommand, else fall back quietly to parse_rc_lines */
@@ -674,6 +685,29 @@ void mutt_enter_command(void)
   /* else successful command */
 
   mutt_buffer_dealloc(&err);
+#ifdef USE_IPC
+  /* Last place where we need to know that data was available */
+  if (Socket.msg.ready)
+  {
+    char resp[1024];
+    switch(rc)
+    {
+      case MUTT_CMD_SUCCESS:
+        strcat(resp, "SUCCESS");
+        break;
+      case MUTT_CMD_WARNING:
+        strcat(resp, "WARNING");
+        break;
+      default:
+        strcat(resp, "ERROR");
+        break;
+    }
+    send(Socket.conn, resp, strlen(resp), 0);
+  }
+close_conn:
+  Socket.msg.ready = false;
+  close(Socket.conn);
+#endif
 }
 
 /**
