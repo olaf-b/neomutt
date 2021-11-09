@@ -704,10 +704,10 @@ buf_ready:
         break;
     }
     send(Socket.conn, resp, strlen(resp), 0);
-  }
 close_conn:
-  Socket.msg.ready = false;
-  close(Socket.conn);
+    Socket.msg.ready = false;
+    close(Socket.conn);
+  }
 #endif
 }
 
