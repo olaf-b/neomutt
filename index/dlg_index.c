@@ -720,7 +720,7 @@ struct Mailbox *change_folder_notmuch(struct Menu *menu, char *buf, int buflen, 
  * @param pager_return Return to the pager afterwards
  * @param read_only    Open Mailbox in read-only mode
  */
-void change_folder_string(struct Menu *menu, char *buf, size_t buflen, int *oldcount,
+int change_folder_string(struct Menu *menu, char *buf, size_t buflen, int *oldcount,
                           struct IndexSharedData *shared, bool *pager_return, bool read_only)
 {
 #ifdef USE_NNTP
@@ -748,7 +748,7 @@ void change_folder_string(struct Menu *menu, char *buf, size_t buflen, int *oldc
     }
     else
       mutt_error(_("%s is not a mailbox"), buf);
-    return;
+    return -1;
   }
 
   /* past this point, we don't return to the pager on error */
@@ -756,6 +756,7 @@ void change_folder_string(struct Menu *menu, char *buf, size_t buflen, int *oldc
 
   struct Mailbox *m = mx_path_resolve(buf);
   change_folder_mailbox(menu, m, oldcount, shared, read_only);
+  return 0;
 }
 
 /**

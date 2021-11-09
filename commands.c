@@ -640,9 +640,10 @@ void mutt_enter_command(void)
   char buf[1024] = { 0 };
 
 #ifdef USE_IPC
-  if (Socket.msg.ready){
+  if (Socket.msg.ready)
+  {
     strcpy(buf, Socket.msg.data);
-    if (buf[0] == '\0') goto close_conn;
+    if (buf[0] == '\0') goto close_conn; /* like return of original */
     goto buf_ready;
   }
 #endif
@@ -689,7 +690,7 @@ buf_ready:
   /* Last place where we need to know that data was available */
   if (Socket.msg.ready)
   {
-    char resp[1024];
+    char resp[1024] = {0};
     switch(rc)
     {
       case MUTT_CMD_SUCCESS:
