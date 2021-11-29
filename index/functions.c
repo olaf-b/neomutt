@@ -617,6 +617,19 @@ static int op_help(struct IndexSharedData *shared, struct IndexPrivateData *priv
 }
 
 /**
+ * op_ipc - 
+ */
+static int op_ipc(struct IndexSharedData *shared, struct IndexPrivateData *priv, int op)
+{
+  ipc_clear_data();
+  if (STAILQ_FIRST(&Socket.msg.data.command))
+    close_conn(0, "");
+  else
+    close_conn(2, "");
+  return IR_SUCCESS;
+}
+
+/**
  * op_jump - Jump to an index number - Implements ::index_function_t - @ingroup index_function_api
  */
 static int op_jump(struct IndexSharedData *shared, struct IndexPrivateData *priv, int op)
@@ -807,6 +820,7 @@ static int op_main_change_folder(struct IndexSharedData *shared,
   /* By default, fill buf with the next mailbox that contains unread mail */
   mutt_mailbox_next(shared->ctx ? shared->mailbox : NULL, folderbuf);
 
+  /*
 #ifdef USE_IPC
   if (Socket.msg.ready)
   {
@@ -814,6 +828,7 @@ static int op_main_change_folder(struct IndexSharedData *shared,
     goto folderbuf_ready;
   }
 #endif
+*/
   if (mutt_buffer_enter_fname(cp, folderbuf, true, shared->mailbox, false, NULL,
                               NULL, MUTT_SEL_NO_FLAGS) == -1)
   {
@@ -3095,9 +3110,12 @@ struct IndexFunction IndexFunctions[] = {
   { OP_HALF_DOWN,                        op_menu_move,                      CHECK_NO_FLAGS },
   { OP_HALF_UP,                          op_menu_move,                      CHECK_NO_FLAGS },
   { OP_HELP,                             op_help,                           CHECK_NO_FLAGS },
+  /*
   { OP_IPC_COMMAND,                      op_enter_command,                  CHECK_NO_FLAGS },
-  { OP_IPC_CONFIG,                       op_enter_command,                           CHECK_NO_FLAGS },
+  { OP_IPC_CONFIG,                       op_enter_command,                  CHECK_NO_FLAGS },
   { OP_IPC_MAILBOX,                      op_main_change_folder,             CHECK_NO_FLAGS },
+  */
+  { OP_IPC,                              op_ipc,                            CHECK_NO_FLAGS },
   { OP_JUMP,                             op_jump,                           CHECK_IN_MAILBOX },
   { OP_LAST_ENTRY,                       op_menu_move,                      CHECK_NO_FLAGS },
   { OP_LIMIT_CURRENT_THREAD,             op_main_limit,                     CHECK_IN_MAILBOX },

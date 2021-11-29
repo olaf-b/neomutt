@@ -639,14 +639,16 @@ void mutt_enter_command(void)
 {
   char buf[1024] = { 0 };
 
+/*
 #ifdef USE_IPC
   if (Socket.msg.ready)
   {
     strcpy(buf, Socket.msg.data);
-    if (buf[0] == '\0') goto close_conn; /* like return of original */
+    if (buf[0] == '\0') goto close_conn; // like return of original
     goto buf_ready;
   }
 #endif
+*/
   window_redraw(NULL);
   /* if enter is pressed after : with no command, just return */
   if ((mutt_get_field(":", buf, sizeof(buf), MUTT_COMMAND, false, NULL, NULL) != 0) ||
