@@ -213,7 +213,7 @@ struct KeyEvent mutt_getch(void)
   while (ch == KEY_RESIZE)
 #endif
 #if defined(USE_INOTIFY) || defined(USE_IPC)
-  ch = mutt_monitor_getch();
+    ch = mutt_monitor_getch();
 #else
   ch = getch();
 #endif

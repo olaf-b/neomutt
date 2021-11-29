@@ -639,7 +639,7 @@ void mutt_enter_command(void)
 {
   char buf[1024] = { 0 };
 
-/*
+  /*
 #ifdef USE_IPC
   if (Socket.msg.ready)
   {
@@ -657,7 +657,7 @@ void mutt_enter_command(void)
     return;
   }
 
-buf_ready:
+  // buf_ready:
   struct Buffer err = mutt_buffer_make(256);
 
   /* check if buf is a valid icommand, else fall back quietly to parse_rc_lines */
@@ -692,8 +692,8 @@ buf_ready:
   /* Last place where we need to know that data was available */
   if (Socket.msg.ready)
   {
-    char resp[1024] = {0};
-    switch(rc)
+    char resp[1024] = { 0 };
+    switch (rc)
     {
       case MUTT_CMD_SUCCESS:
         strcat(resp, "SUCCESS");
@@ -706,7 +706,7 @@ buf_ready:
         break;
     }
     send(Socket.conn, resp, strlen(resp), 0);
-close_conn:
+    // close_conn:
     Socket.msg.ready = false;
     close(Socket.conn);
   }

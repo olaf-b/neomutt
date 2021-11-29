@@ -835,7 +835,7 @@ static int op_main_change_folder(struct IndexSharedData *shared,
     goto changefoldercleanup;
   }
 
-folderbuf_ready:
+// folderbuf_ready:
   /* Selected directory is okay, let's save it. */
   mutt_browser_select_dir(mutt_buffer_string(folderbuf));
 
@@ -861,11 +861,11 @@ folderbuf_ready:
   /* Last place where we need to know that data was available */
   if (Socket.msg.ready)
   {
-    char resp[1024] = {0};
+    char resp[1024] = { 0 };
     if (rc == 0)
-        strcat(resp, "SUCCESS");
+      strcat(resp, "SUCCESS");
     else
-        strcat(resp, "ERROR");
+      strcat(resp, "ERROR");
     send(Socket.conn, resp, strlen(resp), 0);
     Socket.msg.ready = false;
     close(Socket.conn);

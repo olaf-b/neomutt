@@ -721,7 +721,7 @@ struct Mailbox *change_folder_notmuch(struct Menu *menu, char *buf, int buflen, 
  * @param read_only    Open Mailbox in read-only mode
  */
 int change_folder_string(struct Menu *menu, char *buf, size_t buflen, int *oldcount,
-                          struct IndexSharedData *shared, bool *pager_return, bool read_only)
+                         struct IndexSharedData *shared, bool *pager_return, bool read_only)
 {
 #ifdef USE_NNTP
   if (OptNews)
