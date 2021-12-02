@@ -23,6 +23,7 @@ autocrypt/gpgme.c
 autocrypt/schema.c
 bcache/bcache.c
 browser/browser.c
+browser/functions.c
 browser/private_data.c
 browser/sort.c
 color/color.c
