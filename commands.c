@@ -118,8 +118,8 @@ void ci_bounce_message(struct Mailbox *m, struct EmailList *el)
   else
     mutt_buffer_strcpy(prompt, _("Bounce tagged messages to: "));
 
-  rc = mutt_buffer_get_field(mutt_buffer_string(prompt), buf, MUTT_COMP_ALIAS,
-                             false, NULL, NULL, NULL);
+  rc = mutt_get_field(mutt_buffer_string(prompt), buf, MUTT_COMP_ALIAS, false,
+                      NULL, NULL, NULL);
   if ((rc != 0) || mutt_buffer_is_empty(buf))
     goto done;
 
@@ -428,8 +428,8 @@ void mutt_pipe_message(struct Mailbox *m, struct EmailList *el)
 
   struct Buffer *buf = mutt_buffer_pool_get();
 
-  if (mutt_buffer_get_field(_("Pipe to command: "), buf, MUTT_COMP_FILE_SIMPLE,
-                            false, NULL, NULL, NULL) != 0)
+  if (mutt_get_field(_("Pipe to command: "), buf, MUTT_COMP_FILE_SIMPLE, false,
+                     NULL, NULL, NULL) != 0)
   {
     goto cleanup;
   }
@@ -609,8 +609,8 @@ bool mutt_shell_escape(void)
   bool rc = false;
   struct Buffer *buf = mutt_buffer_pool_get();
 
-  if (mutt_buffer_get_field(_("Shell command: "), buf, MUTT_COMP_FILE_SIMPLE,
-                            false, NULL, NULL, NULL) != 0)
+  if (mutt_get_field(_("Shell command: "), buf, MUTT_COMP_FILE_SIMPLE, false,
+                     NULL, NULL, NULL) != 0)
   {
     goto done;
   }
@@ -653,7 +653,7 @@ void mutt_enter_command(void)
 
   window_redraw(NULL);
   /* if enter is pressed after : with no command, just return */
-  if ((mutt_buffer_get_field(":", buf, MUTT_COMP_COMMAND, false, NULL, NULL, NULL) != 0) ||
+  if ((mutt_get_field(":", buf, MUTT_COMP_COMMAND, false, NULL, NULL, NULL) != 0) ||
       mutt_buffer_is_empty(buf))
   {
     goto done;
@@ -887,8 +887,7 @@ int mutt_save_message(struct Mailbox *m, struct EmailList *el,
   mutt_buffer_fix_dptr(buf);
   mutt_buffer_pretty_mailbox(buf);
 
-  if (mutt_buffer_enter_fname(prompt, buf, false, NULL, false, NULL, NULL,
-                              MUTT_SEL_NO_FLAGS) == -1)
+  if (mutt_enter_fname(prompt, buf, false, NULL, false, NULL, NULL, MUTT_SEL_NO_FLAGS) == -1)
   {
     goto cleanup;
   }
@@ -1133,8 +1132,7 @@ bool mutt_edit_content_type(struct Email *e, struct Body *b, FILE *fp)
     }
   }
 
-  if ((mutt_buffer_get_field("Content-Type: ", buf, MUTT_COMP_NO_FLAGS, false,
-                             NULL, NULL, NULL) != 0) ||
+  if ((mutt_get_field("Content-Type: ", buf, MUTT_COMP_NO_FLAGS, false, NULL, NULL, NULL) != 0) ||
       mutt_buffer_is_empty(buf))
   {
     goto done;

@@ -249,8 +249,8 @@ int mutt_pattern_alias_func(char *prompt, struct AliasMenuData *mdata, struct Me
   mutt_buffer_strcpy(buf, mdata->str);
   if (prompt)
   {
-    if ((mutt_buffer_get_field(prompt, buf, MUTT_COMP_PATTERN | MUTT_COMP_CLEAR,
-                               false, NULL, NULL, NULL) != 0) ||
+    if ((mutt_get_field(prompt, buf, MUTT_COMP_PATTERN | MUTT_COMP_CLEAR, false,
+                        NULL, NULL, NULL) != 0) ||
         mutt_buffer_is_empty(buf))
     {
       mutt_buffer_pool_release(&buf);
@@ -355,8 +355,8 @@ int mutt_pattern_func(struct Context *ctx, int op, char *prompt)
   mutt_buffer_strcpy(buf, NONULL(ctx->pattern));
   if (prompt || (op != MUTT_LIMIT))
   {
-    if ((mutt_buffer_get_field(prompt, buf, MUTT_COMP_PATTERN | MUTT_COMP_CLEAR,
-                               false, NULL, NULL, NULL) != 0) ||
+    if ((mutt_get_field(prompt, buf, MUTT_COMP_PATTERN | MUTT_COMP_CLEAR, false,
+                        NULL, NULL, NULL) != 0) ||
         mutt_buffer_is_empty(buf))
     {
       mutt_buffer_pool_release(&buf);
@@ -504,7 +504,7 @@ int mutt_search_command(struct Mailbox *m, struct Menu *menu, int cur, int op)
   {
     buf = mutt_buffer_pool_get();
     mutt_buffer_strcpy(buf, (LastSearch[0] != '\0') ? LastSearch : "");
-    if ((mutt_buffer_get_field(
+    if ((mutt_get_field(
              ((op == OP_SEARCH) || (op == OP_SEARCH_NEXT)) ? _("Search for: ") : _("Reverse search for: "),
              buf, MUTT_COMP_CLEAR | MUTT_COMP_PATTERN, false, NULL, NULL, NULL) != 0) ||
         mutt_buffer_is_empty(buf))
@@ -664,7 +664,7 @@ int mutt_search_alias_command(struct Menu *menu, int cur, int op)
   {
     buf = mutt_buffer_pool_get();
     mutt_buffer_strcpy(buf, (LastSearch[0] != '\0') ? LastSearch : "");
-    if ((mutt_buffer_get_field(
+    if ((mutt_get_field(
              ((op == OP_SEARCH) || (op == OP_SEARCH_NEXT)) ? _("Search for: ") : _("Reverse search for: "),
              buf, MUTT_COMP_CLEAR | MUTT_COMP_PATTERN, false, NULL, NULL, NULL) != 0) ||
         mutt_buffer_is_empty(buf))

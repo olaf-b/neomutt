@@ -70,9 +70,9 @@ int mutt_change_flag(struct Mailbox *m, struct EmailList *el, bool bf);
 
 int mutt_complete(char *buf, size_t buflen);
 int mutt_prepare_template(FILE *fp, struct Mailbox *m, struct Email *e_new, struct Email *e, bool resend);
-int mutt_enter_string_full(struct Buffer *buf, int col, CompletionFlags flags,
-                           bool multiple, struct Mailbox *m, char ***files,
-                           int *numfiles, struct EnterState *state);
+int mutt_enter_string(struct Buffer *buf, int col, CompletionFlags flags,
+                      bool multiple, struct Mailbox *m, char ***files,
+                      int *numfiles, struct EnterState *state);
 int mutt_get_postponed(struct Mailbox *m_cur, struct Email *hdr, struct Email **cur, struct Buffer *fcc);
 SecurityFlags mutt_parse_crypt_hdr(const char *p, bool set_empty_signas, SecurityFlags crypt_app);
 int mutt_num_postponed(struct Mailbox *m, bool force);

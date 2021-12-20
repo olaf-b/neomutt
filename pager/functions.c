@@ -1267,7 +1267,7 @@ static int op_search(struct IndexSharedData *shared, struct PagerPrivateData *pr
   struct Buffer *buf = mutt_buffer_pool_get();
 
   mutt_buffer_strcpy(buf, priv->search_str);
-  if (mutt_buffer_get_field(
+  if (mutt_get_field(
           ((op == OP_SEARCH) || (op == OP_SEARCH_NEXT)) ? _("Search for: ") : _("Reverse search for: "),
           buf, MUTT_COMP_CLEAR | MUTT_COMP_PATTERN, false, NULL, NULL, NULL) != 0)
   {
