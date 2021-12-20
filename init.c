@@ -1304,21 +1304,18 @@ int mutt_command_complete(char *buf, size_t buflen, int pos, int numtabs)
 /**
  * mutt_label_complete - Complete a label name
  * @param buf     Buffer for the result
- * @param buflen  Length of the buffer
  * @param numtabs Number of times the user has hit 'tab'
  * @retval 1 Success, a match
  * @retval 0 Error, no match
  */
-int mutt_label_complete(char *buf, size_t buflen, int numtabs)
+int mutt_label_complete(struct Buffer *buf, int numtabs)
 {
-  char *pt = buf;
-  int spaces; /* keep track of the number of leading spaces on the line */
+  char *pt = buf->data;
 
   if (!Context || !Context->mailbox->label_hash)
     return 0;
 
-  SKIPWS(buf);
-  spaces = buf - pt;
+  SKIPWS(pt);
 
   /* first TAB. Collect all the matches */
   if (numtabs == 1)
@@ -1327,7 +1324,7 @@ int mutt_label_complete(char *buf, size_t buflen, int numtabs)
     struct HashWalkState state = { 0 };
 
     NumMatched = 0;
-    mutt_str_copy(UserTyped, buf, sizeof(UserTyped));
+    mutt_str_copy(UserTyped, pt, sizeof(UserTyped));
     memset(Matches, 0, MatchesListsize);
     memset(Completed, 0, sizeof(Completed));
     while ((entry = mutt_hash_walk(Context->mailbox->label_hash, &state)))
@@ -1356,7 +1353,7 @@ int mutt_label_complete(char *buf, size_t buflen, int numtabs)
   }
 
   /* return the completed label */
-  strncpy(buf, Completed, buflen - spaces);
+  mutt_buffer_strcpy(buf, Completed);
 
   return 1;
 }
