@@ -68,7 +68,7 @@ void mutt_signal_init(void);
 void mutt_emails_set_flag(struct Mailbox *m, struct EmailList *el, enum MessageType flag, bool bf);
 int mutt_change_flag(struct Mailbox *m, struct EmailList *el, bool bf);
 
-int mutt_complete(char *buf, size_t buflen);
+int mutt_complete(struct Buffer *buf);
 int mutt_prepare_template(FILE *fp, struct Mailbox *m, struct Email *e_new, struct Email *e, bool resend);
 int mutt_enter_string(struct Buffer *buf, int col, CompletionFlags flags,
                       bool multiple, struct Mailbox *m, char ***files,
