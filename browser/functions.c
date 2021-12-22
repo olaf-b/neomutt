@@ -79,27 +79,6 @@ void destroy_state(struct BrowserState *state)
 }
 
 /**
- * destroy_state - Free the BrowserState
- * @param state State to free
- *
- * Frees up the memory allocated for the local-global variables.
- */
-void destroy_state(struct BrowserState *state)
-{
-  struct FolderFile *ff = NULL;
-  ARRAY_FOREACH(ff, &state->entry)
-  {
-    FREE(&ff->name);
-    FREE(&ff->desc);
-  }
-  ARRAY_FREE(&state->entry);
-
-#ifdef USE_IMAP
-  FREE(&state->folder);
-#endif
-}
-
-/**
  * op_browser_new_file - Select a new file in this directory - Implements ::browser_function_t - @ingroup browser_function_api
  */
 static int op_browser_new_file(struct BrowserPrivateData *priv, int op)
