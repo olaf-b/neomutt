@@ -70,7 +70,7 @@
 // #define GV_HIDE_ADATA
 // #define GV_HIDE_MDATA
 // #define GV_HIDE_BODY_CONTENT
-// #define GV_HIDE_ENVELOPE
+#define GV_HIDE_ENVELOPE
 
 void dot_email(FILE *fp, struct Email *e, struct ListHead *links);
 void dot_envelope(FILE *fp, struct Envelope *env, struct ListHead *links);
@@ -1135,12 +1135,12 @@ void dot_body(FILE *fp, struct Body *b, struct ListHead *links, bool link_next)
   dot_type_string(fp, "encoding", get_content_encoding(b->encoding), true);
   dot_type_string(fp, "disposition", get_content_disposition(b->disposition), true);
 
-  if (b->stamp != 0)
-  {
-    char arr[64];
-    dot_type_date(arr, sizeof(arr), b->stamp);
-    dot_type_string(fp, "stamp", arr, true);
-  }
+  // if (b->stamp != 0)
+  // {
+  //   char arr[64];
+  //   dot_type_date(arr, sizeof(arr), b->stamp);
+  //   dot_type_string(fp, "stamp", arr, true);
+  // }
 
 #define ADD_BOOL(F) add_flag(&buf, b->F, #F)
   ADD_BOOL(attach_qualifies);
@@ -1161,12 +1161,12 @@ void dot_body(FILE *fp, struct Body *b, struct ListHead *links, bool link_next)
   dot_type_string(fp, "bools",
                   mutt_buffer_is_empty(&buf) ? "[NONE]" : mutt_buffer_string(&buf), true);
 
-  dot_type_number(fp, "attach_count", b->attach_count);
-  dot_type_number(fp, "hdr_offset", b->hdr_offset);
+  // dot_type_number(fp, "attach_count", b->attach_count);
+  // dot_type_number(fp, "hdr_offset", b->hdr_offset);
   dot_type_number(fp, "length", b->length);
-  dot_type_number(fp, "offset", b->offset);
+  // dot_type_number(fp, "offset", b->offset);
 
-  dot_ptr(fp, "aptr", b->aptr, "#3bcbc4");
+  // dot_ptr(fp, "aptr", b->aptr, "#3bcbc4");
 
 #ifdef GV_HIDE_BODY_CONTENT
   if (!TAILQ_EMPTY(&b->parameter))
@@ -1235,11 +1235,11 @@ void dot_body(FILE *fp, struct Body *b, struct ListHead *links, bool link_next)
   else
   {
 #ifndef GV_HIDE_BODY_CONTENT
-    if (b->content)
-    {
-      dot_content(fp, b->content, links);
-      dot_add_link(links, b, b->content, "Body->content", false, NULL);
-    }
+    // if (b->content)
+    // {
+    //   dot_content(fp, b->content, links);
+    //   dot_add_link(links, b, b->content, "Body->content", false, NULL);
+    // }
 #endif
 
     // if (b->aptr)

@@ -90,6 +90,7 @@
 #include "options.h"
 #include "recvattach.h"
 #include "recvcmd.h"
+#include "debug/lib.h"
 
 /// Help Bar for the Attachment selection dialog
 static const struct Mapping AttachHelp[] = {
@@ -670,6 +671,11 @@ void dlg_select_attachment(struct ConfigSubset *sub, struct Mailbox *m,
 
       case OP_PRINT:
       {
+#ifdef USE_DEBUG_GRAPHVIZ
+        dump_graphviz_email(e);
+        dump_graphviz_attach_ctx(actx);
+        break;
+#endif
         struct AttachPtr *cur_att = current_attachment(actx, menu);
         mutt_print_attachment_list(actx, cur_att->fp, menu->tagprefix, cur_att->body);
         break;

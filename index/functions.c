@@ -88,6 +88,7 @@
 #ifdef ENABLE_NLS
 #include <libintl.h>
 #endif
+#include "debug/lib.h"
 
 static const char *Not_available_in_this_menu =
     N_("Not available in this menu");
@@ -1942,6 +1943,10 @@ static int op_prev_entry(struct IndexSharedData *shared, struct IndexPrivateData
  */
 static int op_print(struct IndexSharedData *shared, struct IndexPrivateData *priv, int op)
 {
+#ifdef USE_DEBUG_GRAPHVIZ
+  dump_graphviz_email(shared->email);
+  return IR_SUCCESS;
+#endif
   struct EmailList el = STAILQ_HEAD_INITIALIZER(el);
   el_add_tagged(&el, shared->ctx, shared->email, priv->tag);
   mutt_print_message(shared->mailbox, &el);
