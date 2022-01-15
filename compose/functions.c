@@ -1094,6 +1094,45 @@ static int op_compose_edit_cc(struct ComposeSharedData *shared, int op)
 }
 
 /**
+ * op_compose_edit_content_id - Edit the 'Content-ID' of the attachment - Implements ::compose_function_t - @ingroup compose_function_api
+ */
+static int op_compose_edit_content_id(struct ComposeSharedData *shared, int op)
+{
+  if (!check_count(shared->adata->actx))
+    return IR_NO_ACTION;
+
+  int rc = IR_NO_ACTION;
+  struct Buffer *buf = mutt_buffer_pool_get();
+  struct AttachPtr *cur_att =
+      current_attachment(shared->adata->actx, shared->adata->menu);
+
+  char *id = mutt_param_get(&cur_att->body->parameter, "content-id");
+
+  mutt_buffer_strcpy(buf, id);
+  if (mutt_buffer_get_field("Content-ID: ", buf, MUTT_COMP_NO_FLAGS, false,
+                            NULL, NULL, NULL) == 0)
+  {
+    if (!mutt_str_equal(id, mutt_buffer_string(buf)))
+    {
+      mutt_param_set(&cur_att->body->parameter, "content-id", mutt_buffer_string(buf));
+      menu_queue_redraw(shared->adata->menu, MENU_REDRAW_CURRENT);
+      notify_send(shared->notify, NT_COMPOSE, NT_COMPOSE_ATTACH, NULL);
+      mutt_message_hook(NULL, shared->email, MUTT_SEND2_HOOK);
+      rc = IR_SUCCESS;
+    }
+    mutt_clear_error();
+  }
+  else
+  {
+    mutt_warning(_("Empty 'Content-ID'"));
+    rc = IR_ERROR;
+  }
+
+  mutt_buffer_pool_release(&buf);
+  return rc;
+}
+
+/**
  * op_compose_edit_description - Edit attachment description - Implements ::compose_function_t - @ingroup compose_function_api
  */
 static int op_compose_edit_description(struct ComposeSharedData *shared, int op)
@@ -2393,6 +2432,7 @@ struct ComposeFunction ComposeFunctions[] = {
 #endif
   { OP_COMPOSE_EDIT_BCC,            op_compose_edit_bcc },
   { OP_COMPOSE_EDIT_CC,             op_compose_edit_cc },
+  { OP_COMPOSE_EDIT_CONTENT_ID,     op_compose_edit_content_id },
   { OP_COMPOSE_EDIT_DESCRIPTION,    op_compose_edit_description },
   { OP_COMPOSE_EDIT_ENCODING,       op_compose_edit_encoding },
   { OP_COMPOSE_EDIT_FCC,            op_compose_edit_fcc },

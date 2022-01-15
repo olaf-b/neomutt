@@ -62,6 +62,7 @@
   _fmt(OP_COMPOSE_ATTACH_NEWS_MESSAGE,    N_("attach news articles to this message")) \
   _fmt(OP_COMPOSE_EDIT_BCC,               N_("edit the BCC list")) \
   _fmt(OP_COMPOSE_EDIT_CC,                N_("edit the CC list")) \
+  _fmt(OP_COMPOSE_EDIT_CONTENT_ID,        N_("edit the 'Content-ID' of the attachment")) \
   _fmt(OP_COMPOSE_EDIT_DESCRIPTION,       N_("edit attachment description")) \
   _fmt(OP_COMPOSE_EDIT_ENCODING,          N_("edit attachment transfer-encoding")) \
   _fmt(OP_COMPOSE_EDIT_FCC,               N_("enter a file to save a copy of this message in")) \
