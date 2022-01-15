@@ -1528,6 +1528,42 @@ static int op_compose_group_lingual(struct ComposeSharedData *shared, int op)
 }
 
 /**
+ * op_compose_group_related - Group tagged attachments as 'multipart/related' - Implements ::compose_function_t - @ingroup compose_function_api
+ */
+static int op_compose_group_related(struct ComposeSharedData *shared, int op)
+{
+  static const char *RELATED_TAG = "Related parts for \"%s\"";
+  if (shared->adata->menu->tagged < 2)
+  {
+    mutt_error(_("Grouping 'related' requires at least 2 tagged messages"));
+    return IR_ERROR;
+  }
+
+  // ensure Content-ID is set for tagged attachments
+  for (struct Body *b = shared->email->body; b; b = b->next)
+  {
+    if (!b->tagged)
+      continue;
+
+    char *id = mutt_param_get(&b->parameter, "content-id");
+    if (id)
+      continue;
+
+    if (b->d_filename)
+      id = b->d_filename;
+    else if ((b->disposition != DISP_INLINE) && mutt_path_basename(b->filename))
+      id = (char *) mutt_path_basename(b->filename);
+    else if ((b->disposition != DISP_INLINE) && b->filename)
+      id = b->filename;
+
+    if (id)
+      mutt_param_set(&b->parameter, "content-id", id);
+  }
+
+  return group_attachments(shared, RELATED_TAG, "related");
+}
+
+/**
  * op_compose_ungroup_attachment - Ungroup a 'multipart' attachment - Implements ::compose_function_t - @ingroup compose_function_api
  */
 static int op_compose_ungroup_attachment(struct ComposeSharedData *shared, int op)
@@ -2457,6 +2493,7 @@ struct ComposeFunction ComposeFunctions[] = {
   { OP_COMPOSE_GET_ATTACHMENT,      op_compose_get_attachment },
   { OP_COMPOSE_GROUP_ALTS,          op_compose_group_alts },
   { OP_COMPOSE_GROUP_LINGUAL,       op_compose_group_lingual },
+  { OP_COMPOSE_GROUP_RELATED,       op_compose_group_related },
   { OP_COMPOSE_UNGROUP_ATTACHMENT,  op_compose_ungroup_attachment },
   { OP_COMPOSE_ISPELL,              op_compose_ispell },
 #ifdef MIXMASTER
