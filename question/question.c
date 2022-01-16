@@ -208,8 +208,8 @@ enum QuadOption mutt_yesorno(const char *msg, enum QuadOption def)
   regex_t reyes = { 0 };
   regex_t reno = { 0 };
 
-	bool reyes_ok = false;
-	bool reno_ok  = false;
+  bool reyes_ok = false;
+  bool reno_ok  = false;
 
 /* OpenBSD only supports locale C and UTF-8
  * so there is no suitable base system's locale identification
@@ -240,9 +240,9 @@ enum QuadOption mutt_yesorno(const char *msg, enum QuadOption def)
     reno_ok = true;
 
 #else
-  bool reyes_ok = (expr = nl_langinfo(YESEXPR)) && (expr[0] == '^') &&
+  reyes_ok = (expr = nl_langinfo(YESEXPR)) && (expr[0] == '^') &&
                   (REG_COMP(&reyes, expr, REG_NOSUB) == 0);
-  bool reno_ok = (expr = nl_langinfo(NOEXPR)) && (expr[0] == '^') &&
+  reno_ok = (expr = nl_langinfo(NOEXPR)) && (expr[0] == '^') &&
                  (REG_COMP(&reno, expr, REG_NOSUB) == 0);
 #endif /* End of OpenBSD special interlude */
 
