@@ -208,11 +208,13 @@ enum QuadOption mutt_yesorno(const char *msg, enum QuadOption def)
   regex_t reyes = { 0 };
   regex_t reno = { 0 };
 
+	bool reyes_ok = false;
+	bool reno_ok  = false;
+
 /* OpenBSD only supports locale C and UTF-8
  * so there is no suitable base system's locale identification
  * Remove this code immediately if this situation changes! */
 #if defined(OpenBSD)
-  bool reyes_ok, reno_ok;
 
   char fst_ltr_y, fst_ltr_n;
   char rexyes[10] = "^[+1Yy"; // first part regex yes
