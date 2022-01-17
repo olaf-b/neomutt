@@ -58,7 +58,7 @@ int find_highest_used(void)
  */
 void quoted_colors_clear(void)
 {
-  color_debug("QuotedColors: clean up\n");
+  color_debug(LL_DEBUG5, "QuotedColors: clean up\n");
   for (size_t i = 0; i < COLOR_QUOTES_MAX; i++)
   {
     attr_color_clear(&QuotedColors[i]);
@@ -104,7 +104,7 @@ bool quoted_colors_parse_color(enum ColorId cid, uint32_t fg, uint32_t bg,
   if (cid != MT_COLOR_QUOTED)
     return false;
 
-  color_debug("quoted %d\n", q_level);
+  color_debug(LL_DEBUG5, "quoted %d\n", q_level);
   if (q_level >= COLOR_QUOTES_MAX)
   {
     mutt_buffer_printf(err, _("Maximum quoting level is %d"), COLOR_QUOTES_MAX - 1);
@@ -132,7 +132,7 @@ bool quoted_colors_parse_color(enum ColorId cid, uint32_t fg, uint32_t bg,
 
   struct Buffer *buf = mutt_buffer_pool_get();
   get_colorid_name(cid, buf);
-  color_debug("NT_COLOR_SET: %s\n", buf->data);
+  color_debug(LL_DEBUG5, "NT_COLOR_SET: %s\n", buf->data);
   mutt_buffer_pool_release(&buf);
 
   struct EventColor ev_c = { cid, NULL }; //QWQ NULL!
@@ -155,7 +155,7 @@ bool quoted_colors_parse_color(enum ColorId cid, uint32_t fg, uint32_t bg,
 enum CommandResult quoted_colors_parse_uncolor(enum ColorId cid, int q_level,
                                                struct Buffer *err)
 {
-  color_debug("unquoted %d\n", q_level);
+  color_debug(LL_DEBUG5, "unquoted %d\n", q_level);
 
   struct AttrColor *ac = &QuotedColors[q_level];
   attr_color_clear(ac);

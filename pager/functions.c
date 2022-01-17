@@ -1456,8 +1456,7 @@ static int op_search_next(struct IndexSharedData *shared,
       for (i = priv->wrapped ? priv->lines_used : priv->top_line + priv->searchctx - 1;
            i >= 0; i--)
       {
-        if ((!priv->hide_quoted ||
-             (priv->has_types && (priv->lines[i].cid != MT_COLOR_QUOTED))) &&
+        if ((!priv->hide_quoted || (priv->has_types && (priv->lines[i].cid != MT_COLOR_QUOTED))) &&
             !priv->lines[i].cont_line && (priv->lines[i].search_arr_size > 0))
         {
           break;

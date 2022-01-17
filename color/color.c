@@ -62,7 +62,7 @@ const struct Mapping ColorNames[] = {
  */
 void colors_clear(void)
 {
-  color_debug("clean up\n");
+  color_debug(LL_DEBUG5, "clean up\n");
   mutt_debug(LL_NOTIFY, "NT_COLOR_RESET: [ALL]\n");
   struct EventColor ev_c = { MT_COLOR_MAX, NULL };
   notify_send(ColorsNotify, NT_COLOR, NT_COLOR_RESET, &ev_c);
@@ -87,7 +87,7 @@ void mutt_colors_cleanup(void)
  */
 void mutt_colors_init(void)
 {
-  color_debug("init\n");
+  color_debug(LL_DEBUG5, "init\n");
   color_notify_init();
   simple_colors_init();
   regex_colors_init();
@@ -96,7 +96,7 @@ void mutt_colors_init(void)
 
   start_color();
   use_default_colors();
-  color_debug("COLORS = %d, COLOR_PAIRS = %d\n", COLORS, COLOR_PAIRS);
+  color_debug(LL_DEBUG5, "COLORS = %d, COLOR_PAIRS = %d\n", COLORS, COLOR_PAIRS);
 
   notify_set_parent(ColorsNotify, NeoMutt->notify);
 }

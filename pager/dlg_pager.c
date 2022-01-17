@@ -970,7 +970,7 @@ int mutt_pager(struct PagerView *pview)
     {
       count++;
     }
-    color_debug("AnsiColors %d\n", count);
+    color_debug(LL_DEBUG5, "AnsiColors %d\n", count);
   }
 
   expand_index_panel(dlg, priv);

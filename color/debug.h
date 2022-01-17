@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include <stdbool.h>
+#include "mutt/lib.h"
 #include "color.h"
 
 struct AttrColorList;
@@ -57,7 +58,7 @@ void regex_colors_dump_all (void);
 void simple_color_dump     (enum ColorId cid, const char *prefix);
 void simple_colors_dump    (bool force);
 
-int color_debug(const char *format, ...);
+int color_debug(enum LogLevel level, const char *format, ...);
 
 #else
 
@@ -82,7 +83,7 @@ static inline void regex_colors_dump_all (void) {}
 static inline void simple_color_dump     (enum ColorId cid, const char *prefix) {}
 static inline void simple_colors_dump    (bool force) {}
 
-static inline int color_debug(const char *format, ...) { return 0; }
+static inline int color_debug(enum LogLevel level, const char *format, ...) { return 0; }
 
 #endif
 

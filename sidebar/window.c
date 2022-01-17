@@ -773,7 +773,8 @@ int sb_recalc(struct MuttWindow *win)
     struct Mailbox *m = entry->mailbox;
 
     const int entryidx = ARRAY_FOREACH_IDX;
-    entry->color = calc_color(m, (entryidx == wdata->opn_index), (entryidx == wdata->hil_index));
+    entry->color =
+        calc_color(m, (entryidx == wdata->opn_index), (entryidx == wdata->hil_index));
 
     if (m_cur && (m_cur->realpath[0] != '\0') &&
         mutt_str_equal(m->realpath, m_cur->realpath))

@@ -35,16 +35,13 @@
 #include "gui/lib.h"
 
 #ifdef USE_DEBUG_COLOR
-/// Log colour debugging at this level
-#define ColorLogLevel LL_DEBUG5
-
 /**
  * color_debug - Write to the log file
  * @param format Printf format string
  * @param ...    Args for printf
  * @retval num Number of characters printed
  */
-int color_debug(const char *format, ...)
+int color_debug(enum LogLevel level, const char *format, ...)
 {
   char buf[1024];
 
@@ -53,7 +50,7 @@ int color_debug(const char *format, ...)
   int len = vsnprintf(buf, sizeof(buf), format, ap);
   va_end(ap);
 
-  mutt_debug(ColorLogLevel, buf);
+  mutt_debug(level, buf);
 
   return len;
 }
@@ -218,7 +215,8 @@ void attr_color_dump(struct AttrColor *ac, const char *prefix)
   }
   const char *color = color_debug_log_color(fg, bg);
   const char *attrs = color_debug_log_attrs(ac->attrs);
-  color_debug("%s| %5d | %s | 0x%08x | %s\n", NONULL(prefix), index, color, ac->attrs, attrs);
+  color_debug(LL_DEBUG5, "%s| %5d | %s | 0x%08x | %s\n", NONULL(prefix), index,
+              color, ac->attrs, attrs);
 }
 
 /**
@@ -238,11 +236,11 @@ void attr_color_list_dump(struct AttrColorList *acl, const char *title)
     count++;
   }
 
-  color_debug("\033[1;32m%s:\033[0m (%d)\n", title, count);
+  color_debug(LL_DEBUG5, "\033[1;32m%s:\033[0m (%d)\n", title, count);
   if (count == 0)
     return;
 
-  color_debug("    | Index | Colour | Attrs      | Attrs\n");
+  color_debug(LL_DEBUG5, "    | Index | Colour | Attrs      | Attrs\n");
 
   TAILQ_FOREACH(ac, acl, entries)
   {
@@ -261,8 +259,8 @@ void curses_color_dump(struct CursesColor *cc, const char *prefix)
     return;
 
   const char *color = color_debug_log_color(cc->fg, cc->bg);
-  color_debug("%s| %5d | %3d %3d | %s | %2d |\n", NONULL(prefix), cc->index,
-              cc->fg, cc->bg, color, cc->ref_count);
+  color_debug(LL_DEBUG5, "%s| %5d | %3d %3d | %s | %2d |\n", NONULL(prefix),
+              cc->index, cc->fg, cc->bg, color, cc->ref_count);
 }
 
 /**
@@ -270,11 +268,11 @@ void curses_color_dump(struct CursesColor *cc, const char *prefix)
  */
 void curses_colors_dump(void)
 {
-  color_debug("\033[1;32mCursesColors:\033[0m (%d)\n", NumCursesColors);
+  color_debug(LL_DEBUG5, "\033[1;32mCursesColors:\033[0m (%d)\n", NumCursesColors);
   if (TAILQ_EMPTY(&CursesColors))
     return;
 
-  color_debug("    | index |  fg  bg | colour | rc |\n");
+  color_debug(LL_DEBUG5, "    | index |  fg  bg | colour | rc |\n");
 
   struct CursesColor *cc = NULL;
   TAILQ_FOREACH(cc, &CursesColors, entries)
@@ -306,8 +304,8 @@ void quoted_color_dump(struct AttrColor *ac, int q_level, const char *prefix)
   }
   const char *color = color_debug_log_color(fg, bg);
   const char *attrs = color_debug_log_attrs(ac->attrs);
-  color_debug("%s| quoted%d | %5d | %s | 0x%08x | %s\n", prefix, q_level, index,
-              color, ac->attrs, attrs);
+  color_debug(LL_DEBUG5, "%s| quoted%d | %5d | %s | 0x%08x | %s\n", prefix,
+              q_level, index, color, ac->attrs, attrs);
 }
 
 /**
@@ -315,8 +313,9 @@ void quoted_color_dump(struct AttrColor *ac, int q_level, const char *prefix)
  */
 void quoted_color_list_dump(void)
 {
-  color_debug("\033[1;32mQuotedColors:\033[0m (%d)\n", NumQuotedColors);
-  color_debug("    | Name    | Index | Colour | Attrs      | Attrs\n");
+  color_debug(LL_DEBUG5, "\033[1;32mQuotedColors:\033[0m (%d)\n", NumQuotedColors);
+  color_debug(LL_DEBUG5,
+              "    | Name    | Index | Colour | Attrs      | Attrs\n");
   for (size_t i = 0; i < COLOR_QUOTES_MAX; i++)
   {
     quoted_color_dump(&QuotedColors[i], i, "    ");
@@ -346,8 +345,8 @@ void regex_color_dump(struct RegexColor *rcol, const char *prefix)
   }
   const char *color = color_debug_log_color(fg, bg);
   const char *attrs = color_debug_log_attrs(ac->attrs);
-  color_debug("%s| %5d | %s | 0x%08x | %-8s | %s\n", NONULL(prefix), index,
-              color, ac->attrs, attrs, rcol->pattern);
+  color_debug(LL_DEBUG5, "%s| %5d | %s | 0x%08x | %-8s | %s\n", NONULL(prefix),
+              index, color, ac->attrs, attrs, rcol->pattern);
 }
 
 /**
@@ -367,11 +366,12 @@ void regex_color_list_dump(const char *name, struct RegexColorList *rcl)
     count++;
   }
 
-  color_debug("\033[1;32mRegexColorList %s\033[0m (%d)\n", name, count);
+  color_debug(LL_DEBUG5, "\033[1;32mRegexColorList %s\033[0m (%d)\n", name, count);
   if (count == 0)
     return;
 
-  color_debug("    | Index | Colour | Attrs      | Attrs    | Pattern\n");
+  color_debug(LL_DEBUG5,
+              "    | Index | Colour | Attrs      | Attrs    | Pattern\n");
   STAILQ_FOREACH(rcol, rcl, entries)
   {
     regex_color_dump(rcol, "    ");
@@ -426,8 +426,8 @@ void simple_color_dump(enum ColorId cid, const char *prefix)
   }
   const char *color_str = color_debug_log_color(fg, bg);
   const char *attrs_str = color_debug_log_attrs(ac->attrs);
-  color_debug("%s| %s%-17s | %5d | %s | 0x%08x | %s\n", prefix, compose, name,
-              index, color_str, ac->attrs, attrs_str);
+  color_debug(LL_DEBUG5, "%s| %s%-17s | %5d | %s | 0x%08x | %s\n", prefix,
+              compose, name, index, color_str, ac->attrs, attrs_str);
 }
 
 /**
@@ -435,8 +435,9 @@ void simple_color_dump(enum ColorId cid, const char *prefix)
  */
 void simple_colors_dump(bool force)
 {
-  color_debug("\033[1;32mSimpleColors:\033[0m\n");
+  color_debug(LL_DEBUG5, "\033[1;32mSimpleColors:\033[0m\n");
   color_debug(
+      LL_DEBUG5,
       "    | Name              | Index | Colour | Attrs      | Attrs\n");
   for (enum ColorId cid = MT_COLOR_NONE; cid < MT_COLOR_MAX; cid++)
   {
