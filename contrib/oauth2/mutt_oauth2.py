@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 #
-# Mutt OAuth2 token management script, version 2020-08-07
+# Mutt OAuth2 token management script, version 2022-01-20
 # Written against python 3.7.3, not tried with earlier python versions.
 #
-#   Copyright (C) 2020 Alexander Perlis
+#   Copyright (C) 2020 Alexander Perlis: original implementation
+#   Copyright (C) 2022 Olaf Trygve Berglihn: modified to use libsecret
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -37,15 +38,16 @@ from datetime import timedelta, datetime
 from pathlib import Path
 import socket
 import http.server
-import subprocess
+import secretstorage
+from contextlib import closing
 
 # The token file must be encrypted because it contains multi-use bearer tokens
-# whose usage does not require additional verification. Specify whichever
-# encryption and decryption pipes you prefer. They should read from standard
-# input and write to standard output. The example values here invoke GPG,
-# although won't work until an appropriate identity appears in the first line.
-ENCRYPTION_PIPE = ['gpg', '--encrypt', '--recipient', 'YOUR_GPG_IDENTITY']
-DECRYPTION_PIPE = ['gpg', '--decrypt']
+# whose usage does not require additional verification.  libsecrets is used for
+# this purpose.  KeePassXC has been tested ok, but Gnome Keyring should also
+# work.  The client_id and client_secret are stored in one slot, and the tokens
+# are stored in a separate slot.
+
+CLIENT_ID_ATTRIBUTE = 'client_id'
 
 registrations = {
     'google': {
@@ -79,47 +81,55 @@ registrations = {
     },
 }
 
+
 ap = argparse.ArgumentParser(epilog='''
-This script obtains and prints a valid OAuth2 access token.  State is maintained in an
-encrypted TOKENFILE.  Run with "--verbose --authorize" to get started or whenever all
-tokens have expired, optionally with "--authflow" to override the default authorization
-flow.  To truly start over from scratch, first delete TOKENFILE.  Use "--verbose --test"
-to test the IMAP/POP/SMTP endpoints.
+This script obtains and prints a valid OAuth2 access token.  State is
+maintained in an encrypted TOKENFILE.  Run with "--verbose --authorize" to get
+started or whenever all tokens have expired, optionally with "--authflow" to
+override the default authorization flow.  To truly start over from scratch,
+first delete TOKEN from keyring.  The keyring should in the <idstore> contain
+an attribrute client_id with the value of the client_id string.  The password
+should be the value of the client_secret.  When a token is acquired it is
+stored in the <tokenstore> on the keyring.  Use "--verbose --test" to test the
+IMAP/POP/SMTP endpoints.
 ''')
+
 ap.add_argument('-v', '--verbose', action='store_true', help='increase verbosity')
 ap.add_argument('-d', '--debug', action='store_true', help='enable debug output')
-ap.add_argument('tokenfile', help='persistent token storage')
 ap.add_argument('-a', '--authorize', action='store_true', help='manually authorize new tokens')
 ap.add_argument('--authflow', help='authcode | localhostauthcode | devicecode')
 ap.add_argument('-t', '--test', action='store_true', help='test IMAP/POP/SMTP endpoints')
+ap.add_argument('idstore', help='Password manager storage slot/title for client_id and client_secret')
+ap.add_argument('tokenstore', help='Password manager storage slot/title for the token')
 args = ap.parse_args()
 
-token = {}
-path = Path(args.tokenfile)
-if path.exists():
-    if 0o777 & path.stat().st_mode != 0o600:
-        sys.exit('Token file has unsafe mode. Suggest deleting and starting over.')
-    try:
-        sub = subprocess.run(DECRYPTION_PIPE, check=True, input=path.read_bytes(),
-                             capture_output=True)
-        token = json.loads(sub.stdout)
-    except subprocess.CalledProcessError:
-        sys.exit('Difficulty decrypting token file. Is your decryption agent primed for '
-                 'non-interactive usage, or an appropriate environment variable such as '
-                 'GPG_TTY set to allow interactive agent usage from inside a pipe?')
 
+
+# Connect to DBus and get the client_id and client_secret
+with closing(secretstorage.dbus_init()) as conn:
+    collection = secretstorage.get_default_collection(conn)
+    items = collection.search_items({'Title': args.idstore})
+    try:
+        item = next(items)
+        client_id = item.get_attributes()[CLIENT_ID_ATTRIBUTE]
+        client_secret = item.get_secret()
+    except:
+        print(f"No secret found for '{args.idstore}' with client_id attribute.", file=sys.stderr)
+ 
+    token = {}
+    items = collection.search_items({'Title': args.tokenstore})
+    if items:
+        item = next(items)
+        token = json.loads(item.get_secret())
 
 def writetokenfile():
     '''Writes global token dictionary into token file.'''
-    if not path.exists():
-        path.touch(mode=0o600)
-    if 0o777 & path.stat().st_mode != 0o600:
-        sys.exit('Token file has unsafe mode. Suggest deleting and starting over.')
-    sub2 = subprocess.run(ENCRYPTION_PIPE, check=True, input=json.dumps(token).encode(),
-                          capture_output=True)
-    path.write_bytes(sub2.stdout)
-
-
+    with closing(secretstorage.dbus_init()) as conn:
+        collection = secretstorage.get_default_collection(conn)
+        items = collection.search_items({'Title': args.tokenstore})
+        item = next(items)
+        item.set_secret(json.dumps(token).encode())
+    
 if args.debug:
     print('Obtained from token file:', json.dumps(token))
 if not token:
@@ -144,7 +154,8 @@ authflow = token['authflow']
 if args.authflow:
     authflow = args.authflow
 
-baseparams = {'client_id': registration['client_id']}
+baseparams = {'client_id': client_id}
+ 
 # Microsoft uses 'tenant' but Google does not
 if 'tenant' in registration:
     baseparams['tenant'] = registration['tenant']
@@ -237,7 +248,7 @@ if args.authorize:
             del p[k]
         p.update({'grant_type': 'authorization_code',
                   'code': authcode,
-                  'client_secret': registration['client_secret'],
+                  'client_secret': client_secret,
                   'code_verifier': verifier})
         try:
             response = urllib.request.urlopen(registration['token_endpoint'],
@@ -274,7 +285,7 @@ if args.authorize:
         print(response['message'])
         del p['scope']
         p.update({'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
-                  'client_secret': registration['client_secret'],
+                  'client_secret': client_secret,
                   'device_code': response['device_code']})
         interval = int(response['interval'])
         print('Polling...', end='', flush=True)
@@ -320,7 +331,7 @@ if not access_token_valid():
     if not token['refresh_token']:
         sys.exit('ERROR: No refresh token. Run script with "--authorize".')
     p = baseparams.copy()
-    p.update({'client_secret': registration['client_secret'],
+    p.update({'client_secret': client_secret,
               'refresh_token': token['refresh_token'],
               'grant_type': 'refresh_token'})
     try:

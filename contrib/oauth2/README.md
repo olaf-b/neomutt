@@ -1,9 +1,10 @@
-mutt_oauth.py README by Alexander Perlis, 2020-07-15
-====================================================
+# mutt_oauth.py README
+
+* By Alexander Perlis, 2020-07-15
+* Modified by Olaf Trygve Berglihn, 2022-01-20 
 
 
-Background on plain passwords, app passwords, OAuth2 bearer tokens
-------------------------------------------------------------------
+## Background on plain passwords, app passwords, OAuth2 bearer tokens
 
 An auth stage occurs near the start of the IMAP/POP/SMTP protocol
 conversation. Various SASL methods can be used (depends on what the
@@ -26,8 +27,8 @@ elsewhere on the screen, so they can also be grabbed via keyloggers or
 screen capture (or a human bystander). Two ways to solve these
 conundrums:
 
- - app passwords
- - bearer tokens
+* app passwords
+* bearer tokens
 
 App passwords are simply high-entropy protocol-specific passwords, in
 other words a long computer-generated random string, you use one for
@@ -82,8 +83,7 @@ Many cloud providers are eliminating support for human passwords. Some are
 allowing app passwords in addition to tokens. Some allow only tokens.
 
 
-OAuth2 token support in mutt
-----------------------------
+## OAuth2 token support in mutt
 
 Mutt supports the two SASL methods OAUTHBEARER and XOAUTH2 for presenting an
 OAuth2 access token near the start of the IMAP/POP/SMTP connection.
@@ -105,39 +105,32 @@ mutt_oauth2.py is an example of such an external script. It likely can be
 adapted to work with OAuth2 on many different cloud mail providers, and has
 been tested against:
 
- - Google consumer account (@gmail.com)
- - Google work/school account (G Suite tenant)
- - Microsoft consumer account (e.g., @live.com, @outlook.com, ...)
- - Microsoft work/school account (Azure tenant)
-   (Note that Microsoft uses the marketing term "Modern Auth" in lieu of
-   "OAuth2". In that terminology, mutt indeed supports "Modern Auth".)
+* Google consumer account (@gmail.com)
+* Google work/school account (G Suite tenant)
+* Microsoft consumer account (e.g., @live.com, @outlook.com, ...)
+* Microsoft work/school account (Azure tenant)
+  (Note that Microsoft uses the marketing term "Modern Auth" in lieu of
+  "OAuth2". In that terminology, mutt indeed supports "Modern Auth".)
 
 
-Configure script's token file encryption
-----------------------------------------
+## Configure client_id and client_secret in the encrypted keyring
 
 The script remembers tokens between invocations by keeping them in a
-token file. This file is encrypted. Inside the script are two lines
-  ENCRYPTION_PIPE
-  DECRYPTION_PIPE
-that must be edited to specify your choice of encryption system. A
-popular choice is gpg. To use this:
+a keyring.  libsecret is used for this purpose and supports front
+ends such as secret-tool in libsecret package, Gnome Keyring and KeePassXC.
 
- - Install gpg. For example, "sudo apt install gpg".
- - "gpg --gen-key". Answer the questions. Instead of your email
-   address you could choose say "My mutt_oauth2 token store", then
-   choose a passphrase. You will need to produce that same passphrase
-   whenever mutt_oauth2 needs to unlock the token store.
- - Edit mutt_oauth2.py and put your GPG identity (your email address or
-   whatever you picked above) in the ENCRYPTION_PIPE line.
- - For the gpg-agent to be able to ask you the unlock passphrase,
-   the environment variable GPG_TTY must be set to the current tty.
-   Typically you would put the following inside your .bashrc or equivalent:
-     export GPG_TTY=$(tty)
+The client_id and client_secret is stored in the <idstore> slot.  The tokens
+are stored in the <tokenstore> slot.  You must set up your defauld keyring
+collection to contain these slots.  The <idstore> slot must have an attribute
+'client_id' with the value of the client_id string.
 
+To use this:
 
-Create an app registration
---------------------------
+* Install libsecret and optionally Gnome Keyring or KeePassXC.
+* Add the client_id and client_secret to <idstore> by e.g.
+  secret-tool store --label='idstore' client_id your-id-string-here
+
+## Create an app registration
 
 Before you can connect the script to an account, you need an
 "app registration" for that service. Cloud entities (like Google and
@@ -160,28 +153,28 @@ care of the app registration, and you can skip the step of creating
 your own registration.
 
 
--- How to create a Google registration --
+### How to create a Google registration
 
 Go to console.developers.google.com, and create a new project. The name doesn't
 matter and could be "mutt registration project".
 
- - Go to Library, choose Gmail API, and enable it
- - Hit left arrow icon to get back to console.developers.google.com
- - Choose OAuth Consent Screen
-   - Choose Internal for an organizational G Suite
-   - Choose External if that's your only choice
-   - For Application Name, put for example "Mutt"
-   - Under scopes, choose Add scope, scroll all the way down, enable the "https://mail.google.com/" scope
-   - Fill out additional fields (application logo, etc) if you feel like it (will make the consent screen look nicer)
- - Back at console.developers.google.com, choose Credentials
- - At top, choose Create Credentials / OAuth2 client iD
-   - Application type is "Desktop app"
+ * Go to Library, choose Gmail API, and enable it
+ * Hit left arrow icon to get back to console.developers.google.com
+ * Choose OAuth Consent Screen
+   * Choose Internal for an organizational G Suite
+   * Choose External if that's your only choice
+   * For Application Name, put for example "Mutt"
+   * Under scopes, choose Add scope, scroll all the way down, enable the "https://mail.google.com/" scope
+   * Fill out additional fields (application logo, etc) if you feel like it (will make the consent screen look nicer)
+ * Back at console.developers.google.com, choose Credentials
+ * At top, choose Create Credentials / OAuth2 client iD
+   * Application type is "Desktop app"
 
 Edit the client_id (and client_secret if there is one) into the
 mutt_oauth2.py script.
 
 
--- How to create a Microsoft registration --
+### How to create a Microsoft registration
 
 Go to portal.azure.com, log in with a Microsoft account (get a free
 one at outlook.com), then search for "app registration", and add a
@@ -191,21 +184,21 @@ the redirect URI, then more carefully go through each
 screen:
 
 Branding
- - Leave fields blank or put in reasonable values
- - For official registration, verify your choice of publisher domain
+ * Leave fields blank or put in reasonable values
+ * For official registration, verify your choice of publisher domain
 Authentication:
- - Platform "Mobile and desktop"
- - Redirect URI "http://localhost/"
- - Any kind of account
- - Enable public client (allow device code flow)
+ * Platform "Mobile and desktop"
+ * Redirect URI "http://localhost/"
+ * Any kind of account
+ * Enable public client (allow device code flow)
 API permissions:
- - Microsoft Graph, Delegated, "offline_access"
- - Microsoft Graph, Delegated, "IMAP.AccessAsUser.All"
- - Microsoft Graph, Delegated, "POP.AccessAsUser.All"
- - Microsoft Graph, Delegated, "SMTP.Send"
- - Microsoft Graph, Delegated, "User.Read"
+ * Microsoft Graph, Delegated, "offline_access"
+ * Microsoft Graph, Delegated, "IMAP.AccessAsUser.All"
+ * Microsoft Graph, Delegated, "POP.AccessAsUser.All"
+ * Microsoft Graph, Delegated, "SMTP.Send"
+ * Microsoft Graph, Delegated, "User.Read"
 Overview:
- - Take note of the Application ID (a.k.a. Client ID), you'll need it shortly
+ * Take note of the Application ID (a.k.a. Client ID), you'll need it shortly
 
 End users who aren't able to get to the app registration screen within
 portal.azure.com for their work/school account can temporarily use an
@@ -216,32 +209,31 @@ Edit the client_id (and client_secret if there is one) into the
 mutt_oauth2.py script.
 
 
-Running the script manually to authorize tokens
------------------------------------------------
+## Running the script manually to authorize tokens
 
 Run "mutt_oauth2.py --help" to learn script usage. To obtain the
 initial set of tokens, run the script specifying a name for a
 disposable token storage file, as well as "--authorize", for example
 using this naming scheme:
 
- mutt_oauth2.py userid@myschool.edu.tokens --verbose --authorize
+```
+ mutt_oauth2.py <idstore> <tokenstore> --verbose --authorize
+```
 
 The script will ask questions and provide some instructions. For the
 flow question:
 
- - "authcode": you paste a complicated URL into a browser, then
-manually extract a "code" parameter from a subsequent URL in the
-browser address bar and paste that back to the script.
-
-- "localhostauthcode": you again paste the complicated URL into a browser
-but that's it --- the code is automatically extracted from the response
-relying on a localhost redirect and temporarily listening on a localhost
-port. This flow can only be used if the web browser opening the redirect
-URL sits on the same machine as where mutt is running, in other words can not
-be used if you ssh to a remote machine and run mutt on that remote machine
-while your web browser remains on your local machine.
-
- - "devicecode": you go to a simple URL and just enter a short code.
+* "authcode": you paste a complicated URL into a browser, then
+  manually extract a "code" parameter from a subsequent URL in the
+  browser address bar and paste that back to the script.
+* "localhostauthcode": you again paste the complicated URL into a browser
+  but that's it --- the code is automatically extracted from the response
+  relying on a localhost redirect and temporarily listening on a localhost
+  port. This flow can only be used if the web browser opening the redirect
+  URL sits on the same machine as where mutt is running, in other words can not
+  be used if you ssh to a remote machine and run mutt on that remote machine
+  while your web browser remains on your local machine.
+* "devicecode": you go to a simple URL and just enter a short code.
 
 Your answer here determines the default flow, but on any invocation of
 the script you can override the default with the optional "--authflow"
@@ -271,8 +263,10 @@ a mutt registration is the better way to go.
 Once you've succeeded authorizing mutt_oauth2.py to obtain tokens, try
 one of the following to see whether IMAP/POP/SMTP are working:
 
- mutt_oauth2.py userid@myschool.edu.tokens --verbose --test
- mutt_oauth2.py userid@myschool.edu.tokens --verbose --debug --test
+```
+ mutt_oauth2.py <idstore> <tokenstore> --verbose --test
+ mutt_oauth2.py <idstore> <tokenstore> --verbose --debug --test
+```
 
 Without optional parameters, the script simply returns an access token
 (possibly first conducting a behind-the-scenes URL retrieval using a
@@ -280,6 +274,7 @@ stored refresh token to obtain an updated access token). Calling the
 script without optional parameters is how it will be used by
 mutt. Your .muttrc would look something like:
 
+```
  set imap_user="userid@myschool.edu"
  set folder="imap://outlook.office365.com/"
  set smtp_url="smtp://${imap_user}@smtp.office365.com:587/"
@@ -287,4 +282,5 @@ mutt. Your .muttrc would look something like:
  set imap_oauth_refresh_command="/path/to/script/mutt_oauth2.py ${imap_user}.tokens"
  set smtp_authenticators=${imap_authenticators}
  set smtp_oauth_refresh_command=${imap_oauth_refresh_command}
+```
 
