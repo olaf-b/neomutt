@@ -111,24 +111,38 @@ with closing(secretstorage.dbus_init()) as conn:
     items = collection.search_items({'Title': args.idstore})
     try:
         item = next(items)
+        if item.is_locked():
+            item.unlock()
         client_id = item.get_attributes()[CLIENT_ID_ATTRIBUTE]
         client_secret = item.get_secret()
     except:
-        print(f"No secret found for '{args.idstore}' with client_id attribute.", file=sys.stderr)
+        print(f"No secret found for '{args.idstore}' with client_id attribute or it is locked.", file=sys.stderr)
  
     token = {}
     items = collection.search_items({'Title': args.tokenstore})
-    if items:
-        item = next(items)
-        token = json.loads(item.get_secret())
+    item = next(items)
+    if item.is_locked():
+        item.unlock()
+    token_secret = item.get_secret()
+    if token_secret:
+        token = json.loads(token_secret)
+    else:
+        print(f"No token found for '{args.tokenstore}' with client_secret attribute or it is locked. Assuming this is the first time you run and want to authorize.", file=sys.stderr)
 
 def writetokenfile():
     '''Writes global token dictionary into token file.'''
     with closing(secretstorage.dbus_init()) as conn:
         collection = secretstorage.get_default_collection(conn)
         items = collection.search_items({'Title': args.tokenstore})
-        item = next(items)
-        item.set_secret(json.dumps(token).encode())
+        try:
+            
+            item = next(items)
+            if item.is_locked():
+                item.unlock()
+            item.set_secret(json.dumps(token).encode())
+        except:
+            print(f"Unable to set token for '{args.tokenstore}' or slot is locked so can not set. "
+                  "Remember to create a slot before executing this command. It will not do it automatically, just fill the token.", file=sys.stderr)
     
 if args.debug:
     print('Obtained from token file:', json.dumps(token))
